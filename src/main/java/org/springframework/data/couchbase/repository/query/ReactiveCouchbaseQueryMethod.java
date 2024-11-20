@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.repository.util.ClassUtils.hasParameterOfType;
-
 import java.lang.reflect.Method;
 
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -29,8 +27,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
-import org.springframework.data.util.ReactiveWrappers;
 import org.springframework.data.util.Lazy;
+import org.springframework.data.util.ReactiveWrappers;
+import org.springframework.data.util.ReflectionUtils;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.ClassUtils;
 
@@ -60,7 +59,7 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 
 		super(method, metadata, projectionFactory, mappingContext);
 
-		if (hasParameterOfType(method, Pageable.class)) {
+		if (ReflectionUtils.hasParameterOfType(method, Pageable.class)) {
 
 			TypeInformation<?> returnType = TypeInformation.fromReturnTypeOf(method);
 
@@ -81,7 +80,7 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 						method.toString()));
 			}
 
-			if (hasParameterOfType(method, Sort.class)) {
+			if (ReflectionUtils.hasParameterOfType(method, Sort.class)) {
 				throw new IllegalStateException(String.format("Method must not have Pageable *and* Sort parameter. "
 						+ "Use sorting capabilities on Pageable instead! Offending method: %s", method.toString()));
 			}

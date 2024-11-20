@@ -20,7 +20,7 @@ import jakarta.validation.constraints.Max;
 
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
@@ -59,7 +59,7 @@ public class Airport extends ComparableEntity {
 
 	public Airport() {}
 
-	@PersistenceConstructor
+	@PersistenceCreator
 	public Airport(String key, String iata, String icao) {
 		this.key = key;
 		this.iata = iata;

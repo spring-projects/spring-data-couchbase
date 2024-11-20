@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import static org.springframework.data.querydsl.QuerydslUtils.QUERY_DSL_PRESENT;
+import static org.springframework.data.querydsl.QuerydslUtils.*;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -39,9 +39,10 @@ import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryComposition;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
+import org.springframework.data.repository.query.CachingValueExpressionDelegate;
 import org.springframework.data.repository.query.QueryLookupStrategy;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
 
@@ -142,8 +143,8 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
 	@Override
 	protected Optional<QueryLookupStrategy> getQueryLookupStrategy(QueryLookupStrategy.Key key,
-			QueryMethodEvaluationContextProvider contextProvider) {
-		return Optional.of(new CouchbaseQueryLookupStrategy(contextProvider));
+			ValueExpressionDelegate valueExpressionDelegate) {
+		return Optional.of(new CouchbaseQueryLookupStrategy(valueExpressionDelegate));
 	}
 
 	/**
@@ -151,10 +152,10 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 	 */
 	private class CouchbaseQueryLookupStrategy implements QueryLookupStrategy {
 
-		private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+		private final ValueExpressionDelegate valueExpressionDelegate;
 
-		public CouchbaseQueryLookupStrategy(QueryMethodEvaluationContextProvider evaluationContextProvider) {
-			this.evaluationContextProvider = evaluationContextProvider;
+		public CouchbaseQueryLookupStrategy(ValueExpressionDelegate valueExpressionDelegate) {
+			this.valueExpressionDelegate = new CachingValueExpressionDelegate(valueExpressionDelegate);
 		}
 
 		@Override
@@ -166,11 +167,11 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
 
 			if (queryMethod.hasN1qlAnnotation()) {
-				return new StringBasedCouchbaseQuery(queryMethod, couchbaseOperations, new SpelExpressionParser(),
-						evaluationContextProvider, namedQueries);
+				return new StringBasedCouchbaseQuery(queryMethod, couchbaseOperations,
+						valueExpressionDelegate, namedQueries);
 			} else {
-				return new PartTreeCouchbaseQuery(queryMethod, couchbaseOperations, new SpelExpressionParser(),
-						evaluationContextProvider);
+				return new PartTreeCouchbaseQuery(queryMethod, couchbaseOperations,
+						valueExpressionDelegate);
 			}
 		}
 	}

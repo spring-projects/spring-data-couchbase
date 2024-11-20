@@ -16,8 +16,7 @@
 package org.springframework.data.couchbase.domain;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.PersistenceConstructor;
-import org.springframework.data.couchbase.core.index.CompositeQueryIndex;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.couchbase.core.index.QueryIndexed;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.Collection;
@@ -34,7 +33,7 @@ public class AirlineCollectioned extends ComparableEntity {
 
 	String hqCountry;
 
-	@PersistenceConstructor
+	@PersistenceCreator
 	public AirlineCollectioned(String id, String name, String hqCountry) {
 		this.id = id;
 		this.name = name;

@@ -15,11 +15,8 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
-import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
-import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -33,6 +30,7 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
@@ -42,15 +40,17 @@ import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.StringQuery;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
+import org.springframework.data.expression.ValueEvaluationContext;
+import org.springframework.data.expression.ValueExpression;
+import org.springframework.data.expression.ValueExpressionParser;
 import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.common.TemplateParserContext;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.CouchbaseException;
@@ -156,21 +156,18 @@ public class StringBasedN1qlQueryParser {
 	 * @param typeField
 	 * @param typeValue
 	 * @param accessor
-	 * @param spelExpressionParser
-	 * @param evaluationContextProvider
+	 * @param valueExpressionDelegate
 	 */
 	public StringBasedN1qlQueryParser(String statement, CouchbaseQueryMethod queryMethod, String bucketName, String scope,
 			String collection, CouchbaseConverter couchbaseConverter, String typeField, String typeValue,
-			ParameterAccessor accessor, SpelExpressionParser spelExpressionParser,
-			QueryMethodEvaluationContextProvider evaluationContextProvider) {
+			ParameterAccessor accessor, ValueExpressionDelegate valueExpressionDelegate) {
 		this.statement = statement;
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
 		this.statementContext = queryMethod == null ? null
-				: createN1qlSpelValues(bucketName, scope, collection,
-				queryMethod.getEntityInformation().getJavaType(), typeField, typeValue, queryMethod.isCountQuery(), null, null);
-		this.parsedExpression = getExpression(statement, queryMethod, accessor, spelExpressionParser,
-				evaluationContextProvider);
+				: createN1qlSpelValues(bucketName, scope, collection, queryMethod.getEntityInformation().getJavaType(),
+						typeField, typeValue, queryMethod.isCountQuery(), null, null);
+		this.parsedExpression = getExpression(statement, queryMethod, accessor, valueExpressionDelegate);
 	}
 
 	/**
@@ -201,22 +198,22 @@ public class StringBasedN1qlQueryParser {
 	}
 
 	/**
-     * Create the n1ql spel values. The domainClass is needed, but not the returnClass. Mapping the domainClass to the
-     * returnClass is the responsibility of decoding.
-     *
-     * @param bucketName
-     * @param scope
-     * @param collection
-     * @param domainClass
-     * @param typeKey
-     * @param typeValue
-     * @param isCount
-     * @param distinctFields
-     * @param fields
-     * @return
-     */
+	 * Create the n1ql spel values. The domainClass is needed, but not the returnClass. Mapping the domainClass to the
+	 * returnClass is the responsibility of decoding.
+	 *
+	 * @param bucketName
+	 * @param scope
+	 * @param collection
+	 * @param domainClass
+	 * @param typeKey
+	 * @param typeValue
+	 * @param isCount
+	 * @param distinctFields
+	 * @param fields
+	 * @return
+	 */
 	public N1qlSpelValues createN1qlSpelValues(String bucketName, String scope, String collection, Class domainClass,
-            String typeKey, String typeValue, boolean isCount, String[] distinctFields, String[] fields) {
+			String typeKey, String typeValue, boolean isCount, String[] distinctFields, String[] fields) {
 		String b = bucketName;
 		String keyspace = collection != null ? collection : bucketName;
 		Assert.isTrue(!(distinctFields != null && fields != null),
@@ -224,7 +221,7 @@ public class StringBasedN1qlQueryParser {
 		String entityFields = "";
 		String selectEntity;
 		if (distinctFields != null) {
-            String distinctFieldsStr = getProjectedOrDistinctFields(b, domainClass, typeKey, fields, distinctFields);
+			String distinctFieldsStr = getProjectedOrDistinctFields(b, domainClass, typeKey, fields, distinctFields);
 			if (isCount) {
 				selectEntity = N1QLExpression.select(N1QLExpression.count(N1QLExpression.distinct(x(distinctFieldsStr)))
 						.as(i(CountFragment.COUNT_ALIAS)).from(keyspace)).toString();
@@ -235,12 +232,11 @@ public class StringBasedN1qlQueryParser {
 			selectEntity = N1QLExpression.select(N1QLExpression.count(x("\"*\"")).as(i(CountFragment.COUNT_ALIAS)))
 					.from(keyspace).toString();
 		} else {
-            String projectedFields = getProjectedOrDistinctFields(keyspace, domainClass, typeKey, fields,
-                    distinctFields);
+			String projectedFields = getProjectedOrDistinctFields(keyspace, domainClass, typeKey, fields, distinctFields);
 			entityFields = projectedFields;
 			selectEntity = N1QLExpression.select(x(projectedFields)).from(keyspace).toString();
 		}
-        String typeSelection = !empty(typeKey) && !empty(typeValue) ? i(typeKey).eq(s(typeValue)).toString() : null;
+		String typeSelection = !empty(typeKey) && !empty(typeValue) ? i(typeKey).eq(s(typeValue)).toString() : null;
 
 		String delete = N1QLExpression.delete().from(keyspace).toString();
 		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(keyspace);
@@ -249,9 +245,9 @@ public class StringBasedN1qlQueryParser {
 				i(collection).toString(), typeSelection, delete, returning);
 	}
 
-    private static boolean empty(String s) {
-        return s == null || s.length() == 0;
-    }
+	private static boolean empty(String s) {
+		return s == null || s.length() == 0;
+	}
 
 	private String getProjectedOrDistinctFields(String b, Class resultClass, String typeField, String[] fields,
 			String[] distinctFields) {
@@ -373,12 +369,16 @@ public class StringBasedN1qlQueryParser {
 
 	// this static method can be used to test the parsing behavior for Couchbase specific spel variables
 	// in isolation from the rest of the spel parser initialization chain.
-	public static String doParse(String statement, SpelExpressionParser parser, EvaluationContext evaluationContext,
-			N1qlSpelValues n1qlSpelValues) {
-		org.springframework.expression.Expression parsedExpression = parser.parseExpression(statement,
-				new TemplateParserContext());
-		evaluationContext.setVariable(SPEL_PREFIX, n1qlSpelValues);
-		return parsedExpression.getValue(evaluationContext, String.class);
+	public static String doParse(String statement, ValueExpressionParser parser,
+			ValueEvaluationContext valueEvaluationContext, N1qlSpelValues n1qlSpelValues) {
+		ValueExpression parsedExpression = parser.parse(statement);
+
+		EvaluationContext evaluationContext = valueEvaluationContext.getRequiredEvaluationContext();
+		if (evaluationContext instanceof StandardEvaluationContext ctx) {
+			ctx.setVariable(SPEL_PREFIX, n1qlSpelValues);
+		}
+		Object result = parsedExpression.evaluate(valueEvaluationContext);
+		return result != null ? result.toString() : null;
 	}
 
 	private void checkPlaceholders(String statement) {
@@ -386,9 +386,8 @@ public class StringBasedN1qlQueryParser {
 		Matcher quoteMatcher = QUOTE_DETECTION_PATTERN.matcher(statement);
 		Matcher positionMatcher = POSITIONAL_PLACEHOLDER_PATTERN.matcher(statement);
 		Matcher namedMatcher = NAMED_PLACEHOLDER_PATTERN.matcher(statement);
-		String queryIdentifier = (this.queryMethod != null ? queryMethod.getClass().getName()
-				: StringQuery.class.getName()) + "."
-				+ (this.queryMethod != null ? queryMethod.getName() : this.statement);
+		String queryIdentifier = (this.queryMethod != null ? queryMethod.getClass().getName() : StringQuery.class.getName())
+				+ "." + (this.queryMethod != null ? queryMethod.getName() : this.statement);
 
 		List<int[]> quotes = new ArrayList<int[]>();
 		while (quoteMatcher.find()) {
@@ -404,8 +403,7 @@ public class StringBasedN1qlQueryParser {
 			if (checkNotQuoted(placeholder, positionMatcher.start(), positionMatcher.end(), quotes, queryIdentifier)) {
 				if (this.queryMethod == null) {
 					throw new IllegalArgumentException(
-							"StringQuery created from StringQuery(String) cannot have parameters. "
-									+ "They cannot be processed. "
+							"StringQuery created from StringQuery(String) cannot have parameters. " + "They cannot be processed. "
 									+ "Use an @Query annotated method and the SPEL Expression #{[<n>]} : " + statement);
 				}
 				LOGGER.trace("{}: Found positional placeholder {}", queryIdentifier, placeholder);
@@ -419,9 +417,8 @@ public class StringBasedN1qlQueryParser {
 			// check not in quoted
 			if (checkNotQuoted(placeholder, namedMatcher.start(), namedMatcher.end(), quotes, queryIdentifier)) {
 				if (this.queryMethod == null) {
-					throw new IllegalArgumentException(
-							"StringQuery created from StringQuery(String) cannot have parameters. "
-									+ "Use an @Query annotated method and the SPEL Expression #{[<n>]} : " + statement);
+					throw new IllegalArgumentException("StringQuery created from StringQuery(String) cannot have parameters. "
+							+ "Use an @Query annotated method and the SPEL Expression #{[<n>]} : " + statement);
 				}
 				LOGGER.trace("{}: Found named placeholder {}", queryIdentifier, placeholder);
 				namedCount++;
@@ -449,10 +446,8 @@ public class StringBasedN1qlQueryParser {
 				// check not in quoted
 				if (checkNotQuoted(placeholder, spelMatcher.start(), spelMatcher.end(), quotes, queryIdentifier)) {
 					if (this.queryMethod == null) {
-						throw new IllegalArgumentException(
-								"StringQuery created from StringQuery(String) cannot SPEL expressions. "
-										+ "Use an @Query annotated method and the SPEL Expression #{[<n>]} : "
-										+ statement);
+						throw new IllegalArgumentException("StringQuery created from StringQuery(String) cannot SPEL expressions. "
+								+ "Use an @Query annotated method and the SPEL Expression #{[<n>]} : " + statement);
 					}
 					LOGGER.trace("{}: Found SPEL Experssion {}", queryIdentifier, placeholder);
 				}
@@ -686,19 +681,18 @@ public class StringBasedN1qlQueryParser {
 	 * @param statement
 	 * @param queryMethod
 	 * @param accessor
-	 * @param parser
-	 * @param evaluationContextProvider
+	 * @param valueExpressionDelegate
 	 * @return
 	 */
 
 	public N1QLExpression getExpression(String statement, CouchbaseQueryMethod queryMethod, ParameterAccessor accessor,
-			SpelExpressionParser parser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
+			ValueExpressionDelegate valueExpressionDelegate) {
 		N1QLExpression parsedStatement;
-		if (accessor != null && queryMethod != null && parser != null) {
+		if (accessor != null && queryMethod != null) {
 			Object[] runtimeParameters = getParameters(accessor);
-			EvaluationContext evaluationContext = evaluationContextProvider
-					.getEvaluationContext(queryMethod.getParameters(), runtimeParameters);
-			parsedStatement = x(doParse(statement, parser, evaluationContext, this.getStatementContext()));
+			ValueEvaluationContext evaluationContext = valueExpressionDelegate
+					.createValueContextProvider(queryMethod.getParameters()).getEvaluationContext(runtimeParameters);
+			parsedStatement = x(doParse(statement, valueExpressionDelegate, evaluationContext, this.getStatementContext()));
 		} else {
 			parsedStatement = x(statement);
 		}
@@ -711,7 +705,7 @@ public class StringBasedN1qlQueryParser {
 		for (Object o : accessor) {
 			params.add(o);
 		}
-		if( accessor.getPageable().isPaged()) {
+		if (accessor.getPageable().isPaged()) {
 			params.add(accessor.getPageable());
 		} else if (accessor.getSort().isSorted()) {
 			params.add(accessor.getSort());

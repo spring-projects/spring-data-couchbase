@@ -17,8 +17,7 @@ package org.springframework.data.couchbase.repository.query;
 
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.repository.core.NamedQueries;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 
 /**
  * @author Michael Nitschinger
@@ -31,15 +30,15 @@ public class ReactiveN1qlRepositoryQueryExecutor {
 	private final ReactiveCouchbaseOperations operations;
 	private final ReactiveCouchbaseQueryMethod queryMethod;
 	private final NamedQueries namedQueries;
-	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final ValueExpressionDelegate valueExpressionDelegate;
 
 	public ReactiveN1qlRepositoryQueryExecutor(final ReactiveCouchbaseOperations operations,
 			final ReactiveCouchbaseQueryMethod queryMethod, final NamedQueries namedQueries,
-			QueryMethodEvaluationContextProvider evaluationContextProvider) {
+			ValueExpressionDelegate valueExpressionDelegate) {
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
-		this.evaluationContextProvider = evaluationContextProvider;
+		this.valueExpressionDelegate = valueExpressionDelegate;
 	}
 
 	/**
@@ -52,11 +51,9 @@ public class ReactiveN1qlRepositoryQueryExecutor {
 		// counterpart to N1qlRespositoryQueryExecutor,
 
 		if (queryMethod.hasN1qlAnnotation()) {
-			return new ReactiveStringBasedCouchbaseQuery(queryMethod, operations, new SpelExpressionParser(),
-					evaluationContextProvider, namedQueries).execute(parameters);
+			return new ReactiveStringBasedCouchbaseQuery(queryMethod, operations, valueExpressionDelegate, namedQueries).execute(parameters);
 		} else {
-			return new ReactivePartTreeCouchbaseQuery(queryMethod, operations, new SpelExpressionParser(),
-					evaluationContextProvider).execute(parameters);
+			return new ReactivePartTreeCouchbaseQuery(queryMethod, operations, valueExpressionDelegate).execute(parameters);
 		}
 
 	}
