@@ -34,8 +34,8 @@ import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
 import org.springframework.data.repository.query.QueryLookupStrategy;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
 
@@ -132,8 +132,8 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 
 	@Override
 	protected Optional<QueryLookupStrategy> getQueryLookupStrategy(QueryLookupStrategy.Key key,
-			QueryMethodEvaluationContextProvider contextProvider) {
-		return Optional.of(new ReactiveCouchbaseRepositoryFactory.CouchbaseQueryLookupStrategy(contextProvider));
+			ValueExpressionDelegate valueExpressionDelegate) {
+		return Optional.of(new ReactiveCouchbaseRepositoryFactory.CouchbaseQueryLookupStrategy(valueExpressionDelegate));
 	}
 
 	/**
@@ -141,10 +141,10 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	 */
 	private class CouchbaseQueryLookupStrategy implements QueryLookupStrategy {
 
-		private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+		private final ValueExpressionDelegate valueExpressionDelegate;
 
-		public CouchbaseQueryLookupStrategy(QueryMethodEvaluationContextProvider evaluationContextProvider) {
-			this.evaluationContextProvider = evaluationContextProvider;
+		public CouchbaseQueryLookupStrategy(ValueExpressionDelegate valueExpressionDelegate) {
+			this.valueExpressionDelegate = valueExpressionDelegate;
 		}
 
 		@Override
@@ -156,11 +156,11 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 					mappingContext);
 
 			if (queryMethod.hasN1qlAnnotation()) {
-				return new ReactiveStringBasedCouchbaseQuery(queryMethod, couchbaseOperations, new SpelExpressionParser(),
-						evaluationContextProvider, namedQueries);
+				return new ReactiveStringBasedCouchbaseQuery(queryMethod, couchbaseOperations,
+						valueExpressionDelegate, namedQueries);
 			} else {
-				return new ReactivePartTreeCouchbaseQuery(queryMethod, couchbaseOperations, new SpelExpressionParser(),
-						evaluationContextProvider);
+				return new ReactivePartTreeCouchbaseQuery(queryMethod, couchbaseOperations,
+						valueExpressionDelegate);
 			}
 		}
 	}

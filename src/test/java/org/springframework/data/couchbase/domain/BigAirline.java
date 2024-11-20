@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.domain;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 @Document
@@ -29,7 +29,7 @@ public class BigAirline extends Airline {
 	BigInteger airlineNumber = new BigInteger("88881234567890123456"); // less than 63 bits, otherwise query truncates
 	BigDecimal airlineDecimal = new BigDecimal("888812345678901.23"); // less than 53 bits in mantissa
 
-	@PersistenceConstructor
+	@PersistenceCreator
 	public BigAirline(String id, String name, String hqCountry, Number airlineNumber, Number airlineDecimal) {
 		super(id, name, hqCountry);
 		this.airlineNumber = airlineNumber != null && !airlineNumber.equals("")

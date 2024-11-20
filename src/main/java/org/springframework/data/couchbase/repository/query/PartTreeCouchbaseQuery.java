@@ -21,11 +21,10 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.data.repository.query.parser.PartTree;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * {@link RepositoryQuery} implementation for Couchbase. Replaces PartTreeN1qlBasedQuery
@@ -43,13 +42,11 @@ public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 	 *
 	 * @param method must not be {@literal null}.
 	 * @param operations must not be {@literal null}.
-	 * @param expressionParser must not be {@literal null}.
-	 * @param evaluationContextProvider must not be {@literal null}.
+	 * @param valueExpressionDelegate must not be {@literal null}.
 	 */
-	public PartTreeCouchbaseQuery(CouchbaseQueryMethod method, CouchbaseOperations operations,
-			SpelExpressionParser expressionParser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
+	public PartTreeCouchbaseQuery(CouchbaseQueryMethod method, CouchbaseOperations operations, ValueExpressionDelegate valueExpressionDelegate) {
 
-		super(method, operations, expressionParser, evaluationContextProvider);
+		super(method, operations, valueExpressionDelegate);
 
 		ResultProcessor processor = method.getResultProcessor();
 		this.tree = new CouchbasePartTree(method.getName(), processor.getReturnedType().getDomainType());

@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.Scope;
@@ -33,7 +33,7 @@ import org.springframework.data.couchbase.repository.Scope;
 @Collection("other_collection")
 public class UserCol extends User {
 
-	@PersistenceConstructor
+	@PersistenceCreator
 	public UserCol(final String id, final String firstname, final String lastname) {
 		super(id, firstname, lastname);
 	}

@@ -26,11 +26,10 @@ import org.springframework.data.mapping.model.EntityInstantiators;
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.data.util.TypeInformation;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -47,8 +46,7 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 	private final CouchbaseOperationsType operations;
 	private final EntityInstantiators instantiators;
 	private final ExecutableFindByQuery<?> findOperationWithProjection;
-	private final SpelExpressionParser expressionParser;
-	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final ValueExpressionDelegate valueExpressionDelegate;
 
 	/**
 	 * Creates a new {@link AbstractCouchbaseQuery} from the given {@link ReactiveCouchbaseQueryMethod} and
@@ -56,22 +54,19 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 	 *
 	 * @param method must not be {@literal null}.
 	 * @param operations must not be {@literal null}.
-	 * @param expressionParser must not be {@literal null}.
-	 * @param evaluationContextProvider must not be {@literal null}.
+	 * @param valueExpressionDelegate must not be {@literal null}.
 	 */
 	public AbstractCouchbaseQueryBase(CouchbaseQueryMethod method, CouchbaseOperationsType operations,
-			SpelExpressionParser expressionParser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
+			 ValueExpressionDelegate valueExpressionDelegate) {
 
 		Assert.notNull(method, "CouchbaseQueryMethod must not be null!");
 		Assert.notNull(operations, "ReactiveCouchbaseOperations must not be null!");
-		Assert.notNull(expressionParser, "SpelExpressionParser must not be null!");
-		Assert.notNull(evaluationContextProvider, "QueryMethodEvaluationContextProvider must not be null!");
+		Assert.notNull(valueExpressionDelegate, "ValueExpressionDelegate must not be null!");
 
 		this.method = method;
 		this.operations = operations;
 		this.instantiators = new EntityInstantiators();
-		this.expressionParser = expressionParser;
-		this.evaluationContextProvider = evaluationContextProvider;
+		this.valueExpressionDelegate = valueExpressionDelegate;
 
 		EntityMetadata<?> metadata = method.getEntityInformation();
 		Class<?> type = metadata.getJavaType();

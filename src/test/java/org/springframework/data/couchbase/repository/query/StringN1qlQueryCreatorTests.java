@@ -15,15 +15,14 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.Method;
 import java.util.Properties;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
@@ -43,8 +42,7 @@ import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.ParametersSource;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 
 /**
  * @author Michael Nitschinger
@@ -73,7 +71,7 @@ class StringN1qlQueryCreatorTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT,
+					queryMethod, converter, ValueExpressionDelegate.create(),
 					namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
@@ -91,7 +89,7 @@ class StringN1qlQueryCreatorTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT,
+					queryMethod, converter, ValueExpressionDelegate.create(),
 					namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
@@ -109,7 +107,7 @@ class StringN1qlQueryCreatorTests {
 				converter.getMappingContext());
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+				queryMethod, converter, ValueExpressionDelegate.create(), namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
@@ -130,7 +128,7 @@ class StringN1qlQueryCreatorTests {
 				converter.getMappingContext());
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+				queryMethod, converter, ValueExpressionDelegate.create(), namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
@@ -203,7 +201,7 @@ class StringN1qlQueryCreatorTests {
 				converter.getMappingContext());
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method)), queryMethod,
-				converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+				converter, ValueExpressionDelegate.create(), namedQueries);
 
 		Query query = creator.createQuery();
 

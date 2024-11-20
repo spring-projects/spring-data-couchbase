@@ -26,10 +26,9 @@ import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseQuer
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -51,16 +50,13 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 	 *
 	 * @param method must not be {@literal null}.
 	 * @param operations must not be {@literal null}.
-	 * @param expressionParser must not be {@literal null}.
-	 * @param evaluationContextProvider must not be {@literal null}.
+	 * @param valueExpressionDelegate must not be {@literal null}.
 	 */
 	public AbstractReactiveCouchbaseQuery(ReactiveCouchbaseQueryMethod method, ReactiveCouchbaseOperations operations,
-			SpelExpressionParser expressionParser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
-		super(method, operations, expressionParser, evaluationContextProvider);
+			ValueExpressionDelegate valueExpressionDelegate) {
+		super(method, operations, valueExpressionDelegate);
 		Assert.notNull(method, "CouchbaseQueryMethod must not be null!");
 		Assert.notNull(operations, "ReactiveCouchbaseOperations must not be null!");
-		Assert.notNull(expressionParser, "SpelExpressionParser must not be null!");
-		Assert.notNull(evaluationContextProvider, "QueryMethodEvaluationContextProvider must not be null!");
 
 		EntityMetadata<?> metadata = method.getEntityInformation();
 		Class<?> type = metadata.getJavaType();

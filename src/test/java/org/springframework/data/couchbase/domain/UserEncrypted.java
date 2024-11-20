@@ -29,7 +29,7 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
@@ -55,7 +55,7 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 
 	public String _class; // cheat a little so that will work with Java SDK
 
-	@PersistenceConstructor
+	@PersistenceCreator
 	public UserEncrypted(final String id, final String firstname, final String lastname) {
 		this();
 		this.id = id;
