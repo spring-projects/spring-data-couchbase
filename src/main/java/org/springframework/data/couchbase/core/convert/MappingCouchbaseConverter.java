@@ -16,8 +16,7 @@
 
 package org.springframework.data.couchbase.core.convert;
 
-import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNIQUE;
-import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE_ATTRIBUTES;
+import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.*;
 
 import java.beans.Transient;
 import java.lang.reflect.InaccessibleObjectException;
@@ -34,10 +33,14 @@ import java.util.UUID;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.core.CollectionFactory;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.EnvironmentCapable;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.PropertyValueConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
@@ -62,16 +65,17 @@ import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.mapping.model.CachingValueExpressionEvaluatorFactory;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
-import org.springframework.data.mapping.model.DefaultSpELExpressionEvaluator;
 import org.springframework.data.mapping.model.EntityInstantiator;
 import org.springframework.data.mapping.model.ParameterValueProvider;
 import org.springframework.data.mapping.model.PersistentEntityParameterValueProvider;
 import org.springframework.data.mapping.model.PropertyValueProvider;
 import org.springframework.data.mapping.model.SpELContext;
-import org.springframework.data.mapping.model.SpELExpressionEvaluator;
-import org.springframework.data.mapping.model.SpELExpressionParameterValueProvider;
+import org.springframework.data.mapping.model.ValueExpressionEvaluator;
+import org.springframework.data.mapping.model.ValueExpressionParameterValueProvider;
 import org.springframework.data.util.TypeInformation;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -92,7 +96,7 @@ import com.couchbase.client.java.json.JsonObject;
  * @author Remi Bleuse
  * @author Vipul Gupta
  */
-public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implements ApplicationContextAware {
+public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implements ApplicationContextAware, EnvironmentCapable, EnvironmentAware {
 
 	/**
 	 * The default "type key", the name of the field that will hold type information.
@@ -113,6 +117,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * Spring Expression Language context.
 	 */
 	private final SpELContext spELContext;
+
+	private final SpelExpressionParser expressionParser = new SpelExpressionParser();
+
+	private final CachingValueExpressionEvaluatorFactory expressionEvaluatorFactory;
 	/**
 	 * The overall application context.
 	 */
@@ -126,6 +134,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * Callbacks for Audit Mechanism
 	 */
 	private @Nullable EntityCallbacks entityCallbacks;
+
+	private @Nullable Environment environment;
 
 	public MappingCouchbaseConverter() {
 		this(new CouchbaseMappingContext(), null);
@@ -173,6 +183,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		((CouchbaseMappingContext) mappingContext).setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
 		typeMapper = new DefaultCouchbaseTypeMapper(typeKey != null ? typeKey : TYPEKEY_DEFAULT);
 		spELContext = new SpELContext(CouchbaseDocumentPropertyAccessor.INSTANCE);
+
+		expressionEvaluatorFactory = new CachingValueExpressionEvaluatorFactory(
+				expressionParser, this, o -> spELContext.getEvaluationContext(o));
 	}
 
 	/**
@@ -198,6 +211,21 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 */
 	private static boolean isSubtype(final Class<?> left, final Class<?> right) {
 		return left.isAssignableFrom(right) && !left.equals(right);
+	}
+
+	@Override
+	public void setEnvironment(Environment environment) {
+		this.environment = environment;
+	}
+
+	@Override
+	public Environment getEnvironment() {
+
+		if (this.environment == null) {
+			this.environment = new StandardEnvironment();
+		}
+
+		return environment;
 	}
 
 	@Override
@@ -273,7 +301,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @return the converted entity.
 	 */
 	protected <R> R read(final CouchbasePersistentEntity<R> entity, final CouchbaseDocument source, final Object parent) {
-		final DefaultSpELExpressionEvaluator evaluator = new DefaultSpELExpressionEvaluator(source, spELContext);
+
+		ValueExpressionEvaluator evaluator = expressionEvaluatorFactory.create(source);
 		ParameterValueProvider<CouchbasePersistentProperty> provider = getParameterProvider(entity, source, evaluator,
 				parent);
 		EntityInstantiator instantiator = instantiators.getInstantiatorFor(entity);
@@ -284,7 +313,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		entity.doWithProperties(new PropertyHandler<>() {
 			@Override
 			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-				if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)
+				if (!doesPropertyExistInSource(prop) || entity.isCreatorArgument(prop) || isIdConstructionProperty(prop)
 						|| prop.isAnnotationPresent(N1qlJoin.class)) {
 					return;
 				}
@@ -330,7 +359,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 */
 	protected Object getValueInternal(final CouchbasePersistentProperty property, final CouchbaseDocument source,
 			final Object parent, PersistentEntity entity) {
-		return new CouchbasePropertyValueProvider(source, spELContext, parent, entity).getPropertyValue(property);
+		return new CouchbasePropertyValueProvider(source, expressionEvaluatorFactory.create(source), parent, entity).getPropertyValue(property);
 	}
 
 	/**
@@ -344,7 +373,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 */
 	private ParameterValueProvider<CouchbasePersistentProperty> getParameterProvider(
 			final CouchbasePersistentEntity<?> entity, final CouchbaseDocument source,
-			final DefaultSpELExpressionEvaluator evaluator, final Object parent) {
+			final ValueExpressionEvaluator evaluator, final Object parent) {
 		CouchbasePropertyValueProvider provider = new CouchbasePropertyValueProvider(source, evaluator, parent, entity);
 		PersistentEntityParameterValueProvider<CouchbasePersistentProperty> parameterProvider = new PersistentEntityParameterValueProvider<>(
 				entity, provider, parent);
@@ -1070,7 +1099,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		/**
 		 * The expression evaluator.
 		 */
-		private final SpELExpressionEvaluator evaluator;
+		private final ValueExpressionEvaluator evaluator;
 
 		/**
 		 * The optional parent object.
@@ -1082,15 +1111,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		 */
 		private final PersistentEntity entity;
 
-		public CouchbasePropertyValueProvider(final CouchbaseDocument source, final SpELContext factory,
-				final Object parent, final PersistentEntity entity) {
-			this(source, new DefaultSpELExpressionEvaluator(source, factory), parent, entity);
-		}
-
 		public CouchbasePropertyValueProvider(final CouchbaseDocument source,
-				final DefaultSpELExpressionEvaluator evaluator, final Object parent, final PersistentEntity entity) {
+				final ValueExpressionEvaluator evaluator, final Object parent, final PersistentEntity entity) {
 			Assert.notNull(source, "CouchbaseDocument must not be null!");
-			Assert.notNull(evaluator, "DefaultSpELExpressionEvaluator must not be null!");
+			Assert.notNull(evaluator, "ValueExpressionEvaluator must not be null!");
 
 			this.source = source;
 			this.evaluator = evaluator;
@@ -1148,11 +1172,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * A expression parameter value provider.
 	 */
 	private class ConverterAwareSpELExpressionParameterValueProvider
-			extends SpELExpressionParameterValueProvider<CouchbasePersistentProperty> {
+			extends ValueExpressionParameterValueProvider<CouchbasePersistentProperty> {
 
 		private final Object parent;
 
-		public ConverterAwareSpELExpressionParameterValueProvider(final SpELExpressionEvaluator evaluator,
+		public ConverterAwareSpELExpressionParameterValueProvider(final ValueExpressionEvaluator evaluator,
 				final ConversionService conversionService, final ParameterValueProvider<CouchbasePersistentProperty> delegate,
 				final Object parent) {
 			super(evaluator, conversionService, delegate);
@@ -1160,8 +1184,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		@Override
-		protected <T> T potentiallyConvertSpelValue(final Object object,
-				final Parameter<T, CouchbasePersistentProperty> parameter) {
+		protected <T> T potentiallyConvertExpressionValue(Object object, Parameter<T, CouchbasePersistentProperty> parameter) {
 			return readValue(object, parameter.getType(), parent);
 		}
 	}

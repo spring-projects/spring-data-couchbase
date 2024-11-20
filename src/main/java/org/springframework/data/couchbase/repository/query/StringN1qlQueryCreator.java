@@ -15,8 +15,8 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
-import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
+import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
 
 import java.util.Iterator;
 import java.util.Optional;
@@ -33,11 +33,10 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * @author Michael Reiche
@@ -48,15 +47,14 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 	// everything we need in the StringQuery such that we can doParse() later when we have the scope and collection
 	private final ParameterAccessor accessor;
 	private final MappingContext<?, CouchbasePersistentProperty> context;
-	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final ValueExpressionDelegate valueExpressionDelegate;
 	private final CouchbaseQueryMethod queryMethod;
 	private final CouchbaseConverter couchbaseConverter;
 	private final String queryString;
-	private final SpelExpressionParser spelExpressionParser;
 
 	public StringN1qlQueryCreator(final ParameterAccessor accessor, CouchbaseQueryMethod queryMethod,
-			CouchbaseConverter couchbaseConverter, SpelExpressionParser spelExpressionParser,
-			QueryMethodEvaluationContextProvider evaluationContextProvider, NamedQueries namedQueries) {
+			CouchbaseConverter couchbaseConverter,
+			ValueExpressionDelegate valueExpressionDelegate, NamedQueries namedQueries) {
 
 		// AbstractQueryCreator needs a PartTree, so we give it a dummy one.
 		// The resulting dummy criteria will not be included in the Query
@@ -68,8 +66,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		this.context = couchbaseConverter.getMappingContext();
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
-		this.spelExpressionParser = spelExpressionParser;
-		this.evaluationContextProvider = evaluationContextProvider;
+		this.valueExpressionDelegate = valueExpressionDelegate;
 		final String namedQueryName = queryMethod.getNamedQueryName();
 		String qString;
 		if (queryMethod.hasInlineN1qlQuery()) {
@@ -133,7 +130,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 	@Override
 	protected Query complete(QueryCriteria criteria, Sort sort) {
 		// everything we need in the StringQuery such that we can doParse() later when we have the scope and collection
-		Query q = new StringQuery(queryMethod, queryString, evaluationContextProvider, accessor, spelExpressionParser)
+		Query q = new StringQuery(queryMethod, queryString, valueExpressionDelegate, accessor)
 				.with(sort);
 		return q;
 	}

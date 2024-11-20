@@ -19,7 +19,7 @@ package org.springframework.data.couchbase.domain;
 import java.util.Objects;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
@@ -34,11 +34,11 @@ public class AirportMini extends ComparableEntity {
 	private String iata;
 	private Address address;
 
-	@PersistenceConstructor
-		public AirportMini(final String id, final String iata) {
-			this.id = id;
-			this.iata = iata;
-		}
+	@PersistenceCreator
+	public AirportMini(final String id, final String iata) {
+		this.id = id;
+		this.iata = iata;
+	}
 
 	public String getId() {
 		return id;

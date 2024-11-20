@@ -19,8 +19,7 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 
 /**
  * @author Michael Nitschinger
@@ -33,20 +32,20 @@ public class ReactiveCouchbaseRepositoryQuery extends AbstractReactiveCouchbaseQ
 	private final ReactiveCouchbaseOperations operations;
 	private final ReactiveCouchbaseQueryMethod queryMethod;
 	private final NamedQueries namedQueries;
-	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final ValueExpressionDelegate valueExpressionDelegate;
 
 	public ReactiveCouchbaseRepositoryQuery(final ReactiveCouchbaseOperations operations,
 			final ReactiveCouchbaseQueryMethod queryMethod, final NamedQueries namedQueries) {
-		super(queryMethod, operations, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT);
+		super(queryMethod, operations, ValueExpressionDelegate.create());
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
-		this.evaluationContextProvider = QueryMethodEvaluationContextProvider.DEFAULT;
+		this.valueExpressionDelegate = ValueExpressionDelegate.create();
 	}
 
 	@Override
 	public Object execute(final Object[] parameters) {
-		return new ReactiveN1qlRepositoryQueryExecutor(operations, queryMethod, namedQueries, evaluationContextProvider)
+		return new ReactiveN1qlRepositoryQueryExecutor(operations, queryMethod, namedQueries, valueExpressionDelegate)
 				.execute(parameters);
 	}
 

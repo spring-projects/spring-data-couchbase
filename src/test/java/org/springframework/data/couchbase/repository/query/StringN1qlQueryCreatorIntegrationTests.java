@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -23,6 +23,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
@@ -31,8 +32,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.Airline;
-import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.AirlineRepository;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -47,8 +48,7 @@ import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.ParametersSource;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -83,7 +83,7 @@ class StringN1qlQueryCreatorIntegrationTests extends ClusterAwareIntegrationTest
 					converter.getMappingContext());
 
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Continental"),
-					queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT,
+					queryMethod, converter, ValueExpressionDelegate.create(),
 					namedQueries);
 
 			Query query = creator.createQuery();
@@ -116,7 +116,7 @@ class StringN1qlQueryCreatorIntegrationTests extends ClusterAwareIntegrationTest
 					converter.getMappingContext());
 
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Continental"),
-					queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT,
+					queryMethod, converter, ValueExpressionDelegate.create(),
 					namedQueries);
 
 			Query query = creator.createQuery();

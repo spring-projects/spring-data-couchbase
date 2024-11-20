@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.couchbase.core.mapping.Document;
 
@@ -30,7 +30,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
 @TypeAlias(AbstractingTypeMapper.Type.ABSTRACTUSER)
 public class OtherUser extends AbstractUser {
 
-	@PersistenceConstructor
+	@PersistenceCreator
 	public OtherUser(final String id, final String firstname, final String lastname) {
 		this.id = id;
 		this.firstname = firstname;

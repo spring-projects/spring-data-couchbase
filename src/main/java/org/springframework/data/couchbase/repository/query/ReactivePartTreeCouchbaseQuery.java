@@ -23,10 +23,9 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.data.repository.query.parser.PartTree;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * Reactive PartTree {@link RepositoryQuery} implementation for Couchbase. Replaces ReactivePartN1qlBasedQuery
@@ -46,13 +45,12 @@ public class ReactivePartTreeCouchbaseQuery extends AbstractReactiveCouchbaseQue
 	 *
 	 * @param method must not be {@literal null}.
 	 * @param operations must not be {@literal null}.
-	 * @param expressionParser must not be {@literal null}.
-	 * @param evaluationContextProvider must not be {@literal null}.
+	 * @param valueExpressionDelegate must not be {@literal null}.
 	 */
 	public ReactivePartTreeCouchbaseQuery(ReactiveCouchbaseQueryMethod method, ReactiveCouchbaseOperations operations,
-			SpelExpressionParser expressionParser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
+			ValueExpressionDelegate valueExpressionDelegate) {
 
-		super(method, operations, expressionParser, evaluationContextProvider);
+		super(method, operations, valueExpressionDelegate);
 		this.tree = new PartTree(method.getName(), method.getResultProcessor().getReturnedType().getDomainType());
 		this.converter = operations.getConverter();
 	}

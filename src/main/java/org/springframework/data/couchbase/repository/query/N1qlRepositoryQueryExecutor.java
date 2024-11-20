@@ -22,7 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
@@ -39,14 +39,14 @@ public class N1qlRepositoryQueryExecutor {
 	private final CouchbaseOperations operations;
 	private final CouchbaseQueryMethod queryMethod;
 	private final NamedQueries namedQueries;
-	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final ValueExpressionDelegate valueExpressionDelegate;
 
 	public N1qlRepositoryQueryExecutor(final CouchbaseOperations operations, final CouchbaseQueryMethod queryMethod,
-			final NamedQueries namedQueries, final QueryMethodEvaluationContextProvider evaluationContextProvider) {
+			final NamedQueries namedQueries, final ValueExpressionDelegate valueExpressionDelegate) {
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
-		this.evaluationContextProvider = evaluationContextProvider;
+		this.valueExpressionDelegate = valueExpressionDelegate;
 	}
 
 	private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
@@ -69,8 +69,8 @@ public class N1qlRepositoryQueryExecutor {
 		Query query;
 		ExecutableFindByQuery q;
 		if (queryMethod.hasN1qlAnnotation()) {
-			query = new StringN1qlQueryCreator(accessor, queryMethod, operations.getConverter(), SPEL_PARSER,
-					evaluationContextProvider, namedQueries).createQuery();
+			query = new StringN1qlQueryCreator(accessor, queryMethod, operations.getConverter(),
+					valueExpressionDelegate, namedQueries).createQuery();
 		} else {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
 			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter(), operations.getBucketName())

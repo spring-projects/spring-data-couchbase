@@ -19,7 +19,7 @@ package org.springframework.data.couchbase.domain;
 import java.util.Objects;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
@@ -37,7 +37,7 @@ public class UserJustLastName extends ComparableEntity {
 
 	public User user;
 
-	@PersistenceConstructor
+	@PersistenceCreator
 	public UserJustLastName(final String id, final String lastname) {
 		this.id = id;
 		this.lastname = lastname;

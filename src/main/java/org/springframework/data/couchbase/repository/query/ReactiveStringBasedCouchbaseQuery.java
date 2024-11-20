@@ -21,9 +21,7 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.util.Assert;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 
 /**
  * Query to use a plain JSON String to create the {@link Query} to actually execute.
@@ -36,30 +34,24 @@ public class ReactiveStringBasedCouchbaseQuery extends AbstractReactiveCouchbase
 	private static final String COUNT_EXISTS_AND_DELETE = "Manually defined query for %s cannot be a count and exists or delete query at the same time!";
 	private static final Logger LOG = LoggerFactory.getLogger(ReactiveStringBasedCouchbaseQuery.class);
 
-	private final SpelExpressionParser expressionParser;
-	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final ValueExpressionDelegate valueExpressionDelegate;
 	private final NamedQueries namedQueries;
 
 	/**
 	 * Creates a new {@link ReactiveStringBasedCouchbaseQuery} for the given {@link String}, {@link CouchbaseQueryMethod},
-	 * {@link ReactiveCouchbaseOperations}, {@link SpelExpressionParser} and {@link QueryMethodEvaluationContextProvider}.
+	 * {@link ReactiveCouchbaseOperations}, and {@link ValueExpressionDelegate}.
 	 *
 	 * @param method must not be {@literal null}.
 	 * @param couchbaseOperations must not be {@literal null}.
-	 * @param expressionParser must not be {@literal null}.
-	 * @param evaluationContextProvider must not be {@literal null}.
+	 * @param valueExpressionDelegate must not be {@literal null}.
 	 * @param namedQueries must not be {@literal null}.
 	 */
 	public ReactiveStringBasedCouchbaseQuery(ReactiveCouchbaseQueryMethod method,
-			ReactiveCouchbaseOperations couchbaseOperations, SpelExpressionParser expressionParser,
-			QueryMethodEvaluationContextProvider evaluationContextProvider, NamedQueries namedQueries) {
+			ReactiveCouchbaseOperations couchbaseOperations, ValueExpressionDelegate valueExpressionDelegate, NamedQueries namedQueries) {
 
-		super(method, couchbaseOperations, expressionParser, evaluationContextProvider);
+		super(method, couchbaseOperations, valueExpressionDelegate);
 
-		Assert.notNull(expressionParser, "SpelExpressionParser must not be null!");
-
-		this.expressionParser = expressionParser;
-		this.evaluationContextProvider = evaluationContextProvider;
+		this.valueExpressionDelegate = valueExpressionDelegate;
 
 		if (hasAmbiguousProjectionFlags(isCountQuery(), isExistsQuery(), isDeleteQuery())) {
 			throw new IllegalArgumentException(String.format(COUNT_EXISTS_AND_DELETE, method));
@@ -77,7 +69,7 @@ public class ReactiveStringBasedCouchbaseQuery extends AbstractReactiveCouchbase
 	protected Query createQuery(ParametersParameterAccessor accessor) {
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(accessor, getQueryMethod(),
-				getOperations().getConverter(), expressionParser, evaluationContextProvider, namedQueries);
+				getOperations().getConverter(), valueExpressionDelegate, namedQueries);
 
 		Query query = creator.createQuery();
 

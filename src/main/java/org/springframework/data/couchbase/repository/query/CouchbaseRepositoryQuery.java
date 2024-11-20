@@ -18,8 +18,8 @@ package org.springframework.data.couchbase.repository.query;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 
 /**
  * @author Michael Nitschinger
@@ -32,19 +32,19 @@ public class CouchbaseRepositoryQuery implements RepositoryQuery {
 	private final CouchbaseOperations operations;
 	private final CouchbaseQueryMethod queryMethod;
 	private final NamedQueries namedQueries;
-	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final ValueExpressionDelegate valueExpressionDelegate;
 
 	public CouchbaseRepositoryQuery(final CouchbaseOperations operations, final CouchbaseQueryMethod queryMethod,
 			final NamedQueries namedQueries) {
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
-		this.evaluationContextProvider = QueryMethodEvaluationContextProvider.DEFAULT;
+		this.valueExpressionDelegate = ValueExpressionDelegate.create();
 	}
 
 	@Override
 	public Object execute(final Object[] parameters) {
-		return new N1qlRepositoryQueryExecutor(operations, queryMethod, namedQueries, evaluationContextProvider)
+		return new N1qlRepositoryQueryExecutor(operations, queryMethod, namedQueries, valueExpressionDelegate)
 				.execute(parameters);
 	}
 

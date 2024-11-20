@@ -25,9 +25,8 @@ import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryP
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.mapping.Alias;
 import org.springframework.data.repository.query.ParameterAccessor;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.data.util.TypeInformation;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
@@ -35,37 +34,34 @@ import com.couchbase.client.java.json.JsonValue;
 
 /**
  * Query created from the string in @Query annotation in the repository interface.
- * 
+ *
  * <pre>
  * &#64;Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and firstname = $1 and lastname = $2")
  * List&lt;User&gt; getByFirstnameAndLastname(String firstname, String lastname);
  * </pre>
- * 
+ *
  * It must include the SELECT ... FROM ... preferably via the #n1ql expression, in addition to any predicates required,
  * including the n1ql.filter (for _class = className)
- * 
+ *
  * @author Michael Reiche
  */
 public class StringQuery extends Query {
 
 	private final CouchbaseQueryMethod queryMethod;
 	private final String inlineN1qlQuery;
-	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final ValueExpressionDelegate valueExpressionDelegate;
 	private final ParameterAccessor parameterAccessor;
-	private final SpelExpressionParser spelExpressionParser;
 
 	public StringQuery(CouchbaseQueryMethod queryMethod, String n1qlString,
-			QueryMethodEvaluationContextProvider queryMethodEvaluationContextProvider, ParameterAccessor parameterAccessor,
-			SpelExpressionParser spelExpressionParser) {
+			ValueExpressionDelegate valueExpressionDelegate, ParameterAccessor parameterAccessor) {
 		this.queryMethod = queryMethod;
 		this.inlineN1qlQuery = n1qlString;
-		this.evaluationContextProvider = queryMethodEvaluationContextProvider;
+		this.valueExpressionDelegate = valueExpressionDelegate;
 		this.parameterAccessor = parameterAccessor;
-		this.spelExpressionParser = spelExpressionParser;
 	}
 
 	public StringQuery(String n1qlString) {
-		this(null,n1qlString, null, null, null);
+		this(null,n1qlString, null, null);
 	}
 
 	@Override
@@ -75,8 +71,7 @@ public class StringQuery extends Query {
 		StringBasedN1qlQueryParser parser = getStringN1qlQueryParser(converter, bucketName, scope, collection, domainClass,
 				distinctFields, fields);
 
-		N1QLExpression parsedExpression = parser.getExpression(inlineN1qlQuery, queryMethod, parameterAccessor,
-				spelExpressionParser, evaluationContextProvider);
+		N1QLExpression parsedExpression = parser.getExpression(inlineN1qlQuery, queryMethod, parameterAccessor, valueExpressionDelegate);
 
 		String queryString = parsedExpression.toString();
 
@@ -128,8 +123,7 @@ public class StringQuery extends Query {
 		}
 		// there are no options for distinct and fields for @Query
 		StringBasedN1qlQueryParser sbnqp = new StringBasedN1qlQueryParser(inlineN1qlQuery, queryMethod, bucketName,
-				scopeName, collectionName, converter, typeKey, typeValue, parameterAccessor, new SpelExpressionParser(),
-				evaluationContextProvider);
+				scopeName, collectionName, converter, typeKey, typeValue, parameterAccessor, valueExpressionDelegate);
 
 		return sbnqp;
 	}
@@ -144,7 +138,7 @@ public class StringQuery extends Query {
 
 	/**
 	 * toN1qlRemoveString - use toN1qlSelectString
-	 * 
+	 *
 	 * @param converter
 	 * @param bucketName
 	 * @param scopeName
