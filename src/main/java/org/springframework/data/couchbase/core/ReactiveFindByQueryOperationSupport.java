@@ -205,12 +205,12 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			});
 
 			return allResult.onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				if (throwable instanceof RuntimeException e) {
+					return template.potentiallyConvertRuntimeException(e);
 				} else {
 					return throwable;
 				}
-			}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
+			}).flatMapMany(o -> o instanceof ReactiveQueryResult  reactiveQueryResult ? reactiveQueryResult.rowsAsObject()
 					: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject())).flatMap(row -> {
 						String id = "";
 						Long cas = Long.valueOf(0);
@@ -273,12 +273,12 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			});
 
 			return allResult.onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				if (throwable instanceof RuntimeException e) {
+					return template.potentiallyConvertRuntimeException(e);
 				} else {
 					return throwable;
 				}
-			}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
+			}).flatMapMany(o -> o instanceof ReactiveQueryResult reactiveQueryResult ? reactiveQueryResult.rowsAsObject()
 					: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject()))
 					.map(row -> row.getLong(row.getNames().iterator().next())).next();
 		}

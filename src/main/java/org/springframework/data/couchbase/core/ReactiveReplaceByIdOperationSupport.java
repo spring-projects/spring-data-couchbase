@@ -141,8 +141,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 											result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null));
 								}
 							})).onErrorMap(throwable -> {
-								if (throwable instanceof RuntimeException) {
-									return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+								if (throwable instanceof RuntimeException e) {
+									return template.potentiallyConvertRuntimeException(e);
 								} else {
 									return throwable;
 								}

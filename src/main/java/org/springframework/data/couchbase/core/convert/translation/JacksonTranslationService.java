@@ -96,8 +96,8 @@ public class JacksonTranslationService implements TranslationService, Initializi
 			String key = entry.getKey();
 			Object value = entry.getValue();
 			generator.writeFieldName(key);
-			if (value instanceof CouchbaseDocument) {
-				encodeRecursive((CouchbaseDocument) value, generator);
+			if (value instanceof CouchbaseDocument couchbaseDocument) {
+				encodeRecursive(couchbaseDocument, generator);
 				continue;
 			}
 
