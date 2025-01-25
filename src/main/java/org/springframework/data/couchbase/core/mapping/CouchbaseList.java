@@ -131,10 +131,10 @@ public class CouchbaseList implements CouchbaseStorable {
 
 		int totalSize = thisSize;
 		for (Object value : payload) {
-			if (value instanceof CouchbaseDocument) {
-				totalSize += ((CouchbaseDocument) value).size(true);
-			} else if (value instanceof CouchbaseList) {
-				totalSize += ((CouchbaseList) value).size(true);
+			if (value instanceof CouchbaseDocument couchbaseDocument) {
+				totalSize += couchbaseDocument.size(true);
+			} else if (value instanceof CouchbaseList couchbaseList) {
+				totalSize += couchbaseList.size(true);
 			}
 		}
 
