@@ -74,6 +74,8 @@ public class FindMethod {
                     continue;
                 if(params[j] == boolean.class && parameterTypes[j] == Boolean.class )
                     continue;
+                if(parameterTypes[j] == null && Object.class.isAssignableFrom(params[j])) // any non-primitive
+                    continue;
                 if (!params[j].isAssignableFrom(parameterTypes[j]))
                     break;
             }
