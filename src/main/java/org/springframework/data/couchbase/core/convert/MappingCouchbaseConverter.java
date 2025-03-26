@@ -381,10 +381,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			}
 
 			TypeInformation<?> valueType = type.getMapValueType();
-			if (value instanceof CouchbaseDocument) {
-				map.put(key, read(valueType, (CouchbaseDocument) value, parent));
-			} else if (value instanceof CouchbaseList) {
-				map.put(key, readCollection(valueType, (CouchbaseList) value, parent));
+			if (value instanceof CouchbaseDocument couchbaseDocument) {
+				map.put(key, read(valueType, couchbaseDocument, parent));
+			} else if (value instanceof CouchbaseList couchbaseList) {
+				map.put(key, readCollection(valueType, couchbaseList, parent));
 			} else {
 				Class<?> valueClass = valueType == null ? null : valueType.getType();
 				map.put(key, getPotentiallyConvertedSimpleRead(value, valueClass));
@@ -511,8 +511,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	}
 
 	private String convertToString(Object propertyObj) {
-		if (propertyObj instanceof String) {
-			return (String) propertyObj;
+		if (propertyObj instanceof String str) {
+			return str;
 		} else if (propertyObj instanceof Number) {
 			return new StringBuffer().append(propertyObj).toString();
 		} else {
@@ -821,10 +821,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 
 			Object dbObjItem = source.get(i);
 
-			if (dbObjItem instanceof CouchbaseDocument) {
-				items.add(read(componentType, (CouchbaseDocument) dbObjItem, parent));
-			} else if (dbObjItem instanceof CouchbaseList) {
-				items.add(readCollection(componentType != null ? componentType :TypeInformation.of(dbObjItem.getClass()), (CouchbaseList) dbObjItem, parent));
+			if (dbObjItem instanceof CouchbaseDocument couchbaseDocument) {
+				items.add(read(componentType, couchbaseDocument, parent));
+			} else if (dbObjItem instanceof CouchbaseList couchbaseList) {
+				items.add(readCollection(componentType != null ? componentType :TypeInformation.of(dbObjItem.getClass()), couchbaseList, parent));
 			} else {
 				items.add(getPotentiallyConvertedSimpleRead(dbObjItem, rawComponentType));
 			}
@@ -915,8 +915,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			setEntityCallbacks(EntityCallbacks.create(applicationContext));
 		}
 		ClassLoader classLoader = applicationContext.getClassLoader();
-		if (this.typeMapper instanceof BeanClassLoaderAware && classLoader != null) {
-			((BeanClassLoaderAware) this.typeMapper).setBeanClassLoader(classLoader);
+		if (this.typeMapper instanceof BeanClassLoaderAware beanClassLoaderAware && classLoader != null) {
+			beanClassLoaderAware.setBeanClassLoader(classLoader);
 		}
 	}
 
@@ -949,10 +949,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 
 		if (conversions.hasCustomReadTarget(value.getClass(), rawType)) {
 			return (R) conversionService.convert(value, rawType);
-		} else if (value instanceof CouchbaseDocument) {
-			return (R) read(type, (CouchbaseDocument) value, parent);
-		} else if (value instanceof CouchbaseList) {
-			return (R) readCollection(type, (CouchbaseList) value, parent);
+		} else if (value instanceof CouchbaseDocument couchbaseDocument) {
+			return (R) read(type, couchbaseDocument, parent);
+		} else if (value instanceof CouchbaseList couchbaseList) {
+			return (R) readCollection(type, couchbaseList, parent);
 		} else {
 			return (R) getPotentiallyConvertedSimpleRead(value, type.getType()); // type does not have annotations
 		}
@@ -982,11 +982,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			TypeInformation ti = TypeInformation.of(value.getClass());
 			return (R) conversionService.convert(value, ti.toTypeDescriptor(), new TypeDescriptor(prop.getField()));
 		}
-		if (value instanceof CouchbaseDocument) {
-			return (R) read(prop.getTypeInformation(), (CouchbaseDocument) value, parent);
+		if (value instanceof CouchbaseDocument couchbaseDocument) {
+			return (R) read(prop.getTypeInformation(), couchbaseDocument, parent);
 		}
-		if (value instanceof CouchbaseList) {
-			return (R) readCollection(prop.getTypeInformation(), (CouchbaseList) value, parent);
+		if (value instanceof CouchbaseList couchbaseList) {
+			return (R) readCollection(prop.getTypeInformation(), couchbaseList, parent);
 		}
 		return (R) getPotentiallyConvertedSimpleRead(value, prop);// passes PersistentProperty with annotations
 
