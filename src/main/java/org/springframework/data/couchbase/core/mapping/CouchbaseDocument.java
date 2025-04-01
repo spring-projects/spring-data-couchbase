@@ -20,6 +20,7 @@ import com.couchbase.client.java.json.JsonObject;
 
 import java.util.TreeMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * A {@link CouchbaseDocument} is an abstract representation of a document stored inside Couchbase Server.
@@ -275,8 +276,14 @@ public class CouchbaseDocument implements CouchbaseStorable {
 		if (CouchbaseSimpleTypes.DOCUMENT_TYPES.isSimpleType(clazz)) {
 			return;
 		}
+		
+		// Special handling for List implementations like Collections.SingletonList and ArrayList
+		if (value instanceof List) {
+			return;
+		}
+		
 		throw new IllegalArgumentException(
-				"Attribute of type " + clazz.getCanonicalName() + " cannot be stored and must be converted.");
+				"Attribute of type " + clazz.getCanonicalName() + " cannot be stored in document and must be converted.");
 	}
 
 	/**
