@@ -20,6 +20,7 @@ import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.data.couchbase.util.Util.comprises;
 import static org.springframework.data.couchbase.util.Util.exactly;
 
@@ -29,6 +30,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
+import com.querydsl.core.types.dsl.PathBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,8 +45,10 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener;
 import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
 import org.springframework.data.couchbase.domain.Airline;
+import org.springframework.data.couchbase.domain.AirlineCollectioned;
 import org.springframework.data.couchbase.domain.AirlineRepository;
 import org.springframework.data.couchbase.domain.QAirline;
+import org.springframework.data.couchbase.domain.QAirlineCollectioned;
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.auditing.EnableReactiveCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
@@ -145,6 +149,13 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 					"[unexpected] -> [missing]");
 			assertEquals(" WHERE name = $1", bq(predicate));
 		}
+	}
+
+	@Test
+	void testInjection() {
+		String userSpecifiedPath = "1 = 1) OR (2";
+		PathBuilder<QAirline> pathBuilder = new PathBuilder<>(QAirline.class, "xyz");
+		assertThrows(IllegalStateException.class, () -> pathBuilder.get(userSpecifiedPath).eq("2"));
 	}
 
 	// this gives hqCountry == "" and hqCountry is missing
