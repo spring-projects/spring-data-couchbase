@@ -26,6 +26,7 @@
         <jodatime>2.10.13</jodatime>
         <jackson-joda>2.13.4</jackson-joda>
         <jakarta.el>4.0.0</jakarta.el>
+        <querydsl_of>6.11</querydsl_of>
     </properties>
 
     <dependencyManagement>
@@ -43,10 +44,9 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.querydsl</groupId>
+            <groupId>io.github.openfeign.querydsl</groupId>
             <artifactId>querydsl-apt</artifactId>
-            <version>${querydsl}</version>
-            <classifier>jakarta</classifier>
+            <version>${querydsl_of}</version>
             <scope>provided</scope>
         </dependency>
 
