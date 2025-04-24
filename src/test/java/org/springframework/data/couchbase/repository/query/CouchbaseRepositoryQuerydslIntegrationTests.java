@@ -20,6 +20,7 @@ import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.data.couchbase.util.Util.comprises;
 import static org.springframework.data.couchbase.util.Util.exactly;
 
@@ -29,6 +30,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
+import com.querydsl.core.types.dsl.PathBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -145,6 +147,13 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 					"[unexpected] -> [missing]");
 			assertEquals(" WHERE name = $1", bq(predicate));
 		}
+	}
+
+	@Test
+	void testInjection() {
+		String userSpecifiedPath = "1 = 1) OR (2";
+		PathBuilder<QAirline> pathBuilder = new PathBuilder<>(QAirline.class, "xyz");
+		assertThrows(IllegalStateException.class, () -> pathBuilder.get(userSpecifiedPath).eq("2"));
 	}
 
 	// this gives hqCountry == "" and hqCountry is missing
