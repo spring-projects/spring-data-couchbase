@@ -1,5 +1,5 @@
 [[couchbase.fieldlevelencryption]]
-= Couchbase Field Level Encrytpion
+= Couchbase Field Level Encryption
 
 Couchbase supports https://docs.couchbase.com/java-sdk/current/howtos/encrypting-using-sdk.html[Field Level Encryption]. This section documents how to use it with Spring Data Couchbase.
 
