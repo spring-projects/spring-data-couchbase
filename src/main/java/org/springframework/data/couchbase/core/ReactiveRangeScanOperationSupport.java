@@ -167,8 +167,8 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 									pArgs.getScope(), pArgs.getCollection(), null, null)));
 
 			return reactiveEntities.onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				if (throwable instanceof RuntimeException e) {
+					return template.potentiallyConvertRuntimeException(e);
 				} else {
 					return throwable;
 				}
@@ -213,8 +213,8 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 					.thenMany(rc.scan(scanType, buildScanOptions(pArgs.getOptions(), true)).map(result -> result.id()));
 
 			return reactiveEntities.onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				if (throwable instanceof RuntimeException e) {
+					return template.potentiallyConvertRuntimeException(e);
 				} else {
 					return throwable;
 				}
