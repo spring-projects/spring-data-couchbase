@@ -18,7 +18,7 @@
     </parent>
 
     <properties>
-        <couchbase>3.7.8</couchbase>
+        <couchbase>3.8.0</couchbase>
         <springdata.commons>4.0.0-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
         <hibernate.validator>7.0.1.Final</hibernate.validator>
@@ -44,9 +44,6 @@
     <dependencies>
 
         <dependency>
-<!--
-            <groupId>io.github.openfeign.querydsl</groupId>
--->
             <groupId>io.github.openfeign.querydsl</groupId>
             <artifactId>querydsl-apt</artifactId>
             <version>${querydsl_of}</version>
@@ -348,7 +345,7 @@
 	</profiles>
 
 	<repositories>
-<repository>
+		<repository>
 			<id>spring-snapshot</id>
 			<url>https://repo.spring.io/snapshot</url>
 			<snapshots>

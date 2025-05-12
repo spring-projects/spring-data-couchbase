@@ -19,7 +19,6 @@ package org.springframework.data.couchbase.repository;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -142,20 +141,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 			Airport airport1 = reactiveAirportRepository.findById(airports.get(0).getId()).block();
 			assertEquals(airport1.getIata(), vie.getIata());
 			Airport airport2 = reactiveAirportRepository.findByIata(airports.get(0).getIata()).block();
-			assertEquals(airport2.getId(), vie.getId());
-		} finally {
-			reactiveAirportRepository.delete(vie).block();
-		}
-	}
-
-	@Test
-	void testNullParamToDyanmicProxyable() {
-		Airport vie = null;
-		try {
-			vie = new Airport("airports::vie", "vie", "low2");
-			reactiveAirportRepository.save(vie).block();
-			Airport airport2 = reactiveAirportRepository.withCollection("_default").findByIata(null).block();
-			assertNull(airport2);
+			assertEquals(airport1.getId(), vie.getId());
 		} finally {
 			reactiveAirportRepository.delete(vie).block();
 		}

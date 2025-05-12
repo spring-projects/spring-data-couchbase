@@ -45,10 +45,8 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener;
 import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
 import org.springframework.data.couchbase.domain.Airline;
-import org.springframework.data.couchbase.domain.AirlineCollectioned;
 import org.springframework.data.couchbase.domain.AirlineRepository;
 import org.springframework.data.couchbase.domain.QAirline;
-import org.springframework.data.couchbase.domain.QAirlineCollectioned;
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.auditing.EnableReactiveCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
@@ -432,7 +430,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 			assertEquals(" WHERE name in $1", bq(predicate));
 		}
 	}
-	
+
 	@Test
 	void testSort(){
 		{
@@ -497,7 +495,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 					"Order of airlines does not match");
 		}
 	}
-	
+
 
 	@Test
 	void testNotIn() {

@@ -1,5 +1,5 @@
 [[couchbase.fieldlevelencryption]]
-= Couchbase Field Level Encryption
+= Couchbase Field Level Encrytpion
 
 Couchbase supports https://docs.couchbase.com/java-sdk/current/howtos/encrypting-using-sdk.html[Field Level Encryption]. This section documents how to use it with Spring Data Couchbase.
 
@@ -57,8 +57,8 @@ protected CryptoManager cryptoManager() {
 
 1. @Encrypted defines a field as encrypted.
 2. @Encrypted(migration = Encrypted.Migration.FROM_UNENCRYPTED) defines a field that may or may not be encrypted when read. It will be encrypted when written.
-3. @Encrypted(encrypter = "<encrypterAlias>") specifies the alias of the encrypter to use for encryption. Note this is not the algorithm, but the name specified when adding the encrypter to the CryptoManager. 
- 
+3. @Encrypted(encrypter = "<encrypterAlias>") specifies the alias of the encrypter to use for encryption. Note this is not the algorithm, but the name specified when adding the encrypter to the CryptoManager.
+
 [[example]]
 === Example
 .AbstractCouchbaseConfiguration
@@ -77,7 +77,7 @@ static class Config extends AbstractCouchbaseConfiguration {
   @Override public String getBucketName() { /* ... */ }
 
   /* provide a cryptoManager */
-  @Override 
+  @Override
   protected CryptoManager cryptoManager() {
     KeyStore javaKeyStore = KeyStore.getInstance("MyKeyStoreType");
     FileInputStream fis = new java.io.FileInputStream("keyStoreName");
