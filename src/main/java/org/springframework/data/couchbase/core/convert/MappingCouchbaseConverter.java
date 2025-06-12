@@ -1130,7 +1130,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 	}
 
-	String maybeMangle(PersistentProperty<?> property) {
+	public String maybeMangle(PersistentProperty<?> property) {
 		Assert.notNull(property, "property");
 		if (!conversions.hasValueConverter(property)) {
 			return ((CouchbasePersistentProperty) property).getFieldName();
