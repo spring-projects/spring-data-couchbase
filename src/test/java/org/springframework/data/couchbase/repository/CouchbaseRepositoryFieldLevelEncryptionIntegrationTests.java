@@ -154,9 +154,13 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 		assertFalse(userEncryptedRepository.existsById(user.getId()));
 		userEncryptedRepository.save(user);
 		// read the user with Spring
+
 		Optional<UserEncrypted> writeSpringReadSpring = userEncryptedRepository.findById(user.getId());
 		assertTrue(writeSpringReadSpring.isPresent());
 		writeSpringReadSpring.ifPresent(u -> assertEquals(user, u));
+
+		List<UserEncrypted> writeSpringReadSpring2 = userEncryptedRepository.findAll();
+		assertEquals(user, writeSpringReadSpring2.stream().filter(u -> u.getId().equals(user.getId())).findFirst().get());
 
 		if (cleanAfter) {
 			try {
