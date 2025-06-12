@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -332,7 +333,13 @@ public class StringBasedN1qlQueryParser {
 				if (fieldList == null || fieldList.contains(prop.getFieldName())) {
 					PersistentPropertyPath<CouchbasePersistentProperty> path = couchbaseConverter.getMappingContext()
 							.getPersistentPropertyPath(prop.getName(), persistentEntity.getTypeInformation().getType());
-					projectField = N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop, persistentEntity).toString();
+					String unmangled = prop.getFieldName();
+					String maybeMangled =((MappingCouchbaseConverter)couchbaseConverter).maybeMangle(prop);
+					if(maybeMangled.equals(unmangled)) {
+						projectField = N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop, persistentEntity).toString();
+					} else {
+						projectField = i(maybeMangled).toString();
+					}
 					if (sb.length() > 0) {
 						sb.append(", ");
 					}
