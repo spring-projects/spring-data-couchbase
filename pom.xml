@@ -14,12 +14,12 @@
     <parent>
         <groupId>org.springframework.data.build</groupId>
         <artifactId>spring-data-parent</artifactId>
-        <version>3.5.1-SNAPSHOT</version>
+        <version>3.5.1</version>
     </parent>
 
     <properties>
         <couchbase>3.8.0</couchbase>
-        <springdata.commons>3.5.1-SNAPSHOT</springdata.commons>
+        <springdata.commons>3.5.1</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
         <hibernate.validator>7.0.1.Final</hibernate.validator>
         <couchbase.encryption>3.1.0</couchbase.encryption>
@@ -348,19 +348,7 @@
 	</profiles>
 
 	<repositories>
-		<repository>
-			<id>spring-snapshot</id>
-			<url>https://repo.spring.io/snapshot</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
-		<repository>
-			<id>spring-milestone</id>
-			<url>https://repo.spring.io/milestone</url>
-		</repository>
+		
+		
 	</repositories>
 </project>
