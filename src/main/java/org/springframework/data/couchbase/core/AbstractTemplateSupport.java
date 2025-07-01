@@ -180,8 +180,8 @@ public abstract class AbstractTemplateSupport {
 		long cas = 0;
 		if (versionProperty != null) {
 			Object casObject = accessor.getProperty(versionProperty);
-			if (casObject instanceof Number) {
-				cas = ((Number) casObject).longValue();
+			if (casObject instanceof Number number) {
+				cas = number.longValue();
 			}
 		}
 		return cas;
