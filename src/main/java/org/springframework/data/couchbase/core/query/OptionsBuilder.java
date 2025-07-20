@@ -75,10 +75,10 @@ public class OptionsBuilder {
 	static QueryOptions buildQueryOptions(Query query, QueryOptions options, QueryScanConsistency scanConsistency) {
 		options = options != null ? options : QueryOptions.queryOptions();
 		if (query.getParameters() != null) {
-			if (query.getParameters() instanceof JsonArray && !((JsonArray) query.getParameters()).isEmpty()) {
-				options.parameters((JsonArray) query.getParameters());
-			} else if( query.getParameters() instanceof JsonObject && !((JsonObject)query.getParameters()).isEmpty()){
-				options.parameters((JsonObject) query.getParameters());
+			if (query.getParameters() instanceof JsonArray jsonArray && !jsonArray.isEmpty()) {
+				options.parameters(jsonArray);
+			} else if( query.getParameters() instanceof JsonObject jsonObject && !jsonObject.isEmpty()){
+				options.parameters(jsonObject);
 			}
 		}
 
@@ -134,10 +134,10 @@ public class OptionsBuilder {
 		}
 
 		Object value = optsJson.get("args");
-		if(value instanceof JsonObject){
-			txOptions.parameters((JsonObject)value);
-		}else if(value instanceof JsonArray) {
-			txOptions.parameters((JsonArray) value);
+		if(value instanceof JsonObject jsonObject){
+			txOptions.parameters(jsonObject);
+		}else if(value instanceof JsonArray jsonArray) {
+			txOptions.parameters(jsonArray);
 		} else  if(value != null) {
       throw InvalidArgumentException.fromMessage(
           "non-null args property was neither JsonObject(namedParameters) nor JsonArray(positionalParameters) "
