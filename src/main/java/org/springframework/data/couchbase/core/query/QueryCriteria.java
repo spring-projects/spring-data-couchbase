@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.CollectionUtils;
 
 import com.couchbase.client.core.error.CouchbaseException;

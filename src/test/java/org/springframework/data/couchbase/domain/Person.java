@@ -27,7 +27,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
 import org.springframework.data.domain.Persistable;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Person entity for tests.

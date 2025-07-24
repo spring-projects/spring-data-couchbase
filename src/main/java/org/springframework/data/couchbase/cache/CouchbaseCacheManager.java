@@ -28,7 +28,7 @@ import java.util.Set;
 import org.springframework.cache.Cache;
 import org.springframework.cache.transaction.AbstractTransactionSupportingCacheManager;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 public class CouchbaseCacheManager extends AbstractTransactionSupportingCacheManager {
