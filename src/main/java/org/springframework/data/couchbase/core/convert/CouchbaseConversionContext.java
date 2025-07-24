@@ -19,7 +19,7 @@ import org.springframework.data.convert.ValueConversionContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.util.TypeInformation;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link ValueConversionContext} that allows to delegate read/write to an underlying {@link CouchbaseConverter}.

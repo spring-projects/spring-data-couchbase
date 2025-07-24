@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.transaction;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.support.ResourceHolderSupport;
 
 import com.couchbase.client.core.annotation.Stability;
