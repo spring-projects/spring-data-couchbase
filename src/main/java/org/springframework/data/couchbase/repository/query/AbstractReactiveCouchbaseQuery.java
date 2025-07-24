@@ -29,7 +29,7 @@ import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.ValueExpressionDelegate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 /**

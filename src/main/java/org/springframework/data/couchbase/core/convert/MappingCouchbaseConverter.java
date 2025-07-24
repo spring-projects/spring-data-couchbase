@@ -76,7 +76,7 @@ import org.springframework.data.mapping.model.ValueExpressionEvaluator;
 import org.springframework.data.mapping.model.ValueExpressionParameterValueProvider;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 

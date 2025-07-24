@@ -31,7 +31,7 @@ import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.data.couchbase.transaction.error.TransactionRollbackRequestedException;
 import org.springframework.data.couchbase.transaction.error.TransactionSystemAmbiguousException;
 import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.ReactiveTransaction;
 import org.springframework.transaction.TransactionDefinition;

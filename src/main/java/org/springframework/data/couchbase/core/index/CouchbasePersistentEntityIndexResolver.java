@@ -32,7 +32,7 @@ import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.util.TypeInformation;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
