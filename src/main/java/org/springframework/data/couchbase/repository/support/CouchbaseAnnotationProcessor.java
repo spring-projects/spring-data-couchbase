@@ -37,7 +37,7 @@ import com.querydsl.core.annotations.QueryEmbedded;
 import com.querydsl.core.annotations.QueryEntities;
 import com.querydsl.core.annotations.QuerySupertype;
 import com.querydsl.core.annotations.QueryTransient;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Annotation processor to create Querydsl query types for QueryDsl annotated classes.

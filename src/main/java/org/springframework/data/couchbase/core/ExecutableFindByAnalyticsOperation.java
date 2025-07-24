@@ -27,7 +27,7 @@ import org.springframework.data.couchbase.core.support.OneAndAll;
 import org.springframework.data.couchbase.core.support.WithAnalyticsConsistency;
 import org.springframework.data.couchbase.core.support.WithAnalyticsOptions;
 import org.springframework.data.couchbase.core.support.WithAnalyticsQuery;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import com.couchbase.client.java.analytics.AnalyticsOptions;
 import com.couchbase.client.java.analytics.AnalyticsScanConsistency;

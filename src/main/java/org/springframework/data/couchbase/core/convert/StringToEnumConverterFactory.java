@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.core.convert;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 import org.springframework.data.convert.ReadingConverter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.encryption.CryptoManager;

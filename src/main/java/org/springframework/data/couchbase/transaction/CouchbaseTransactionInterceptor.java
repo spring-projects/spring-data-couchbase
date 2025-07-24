@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 
 import com.couchbase.client.core.annotation.Stability;
 import org.aopalliance.intercept.MethodInterceptor;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.interceptor.TransactionAttribute;
 import org.springframework.transaction.interceptor.TransactionAttributeSource;

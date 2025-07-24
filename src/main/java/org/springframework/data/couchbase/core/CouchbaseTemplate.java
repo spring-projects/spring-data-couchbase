@@ -30,7 +30,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.query.QueryScanConsistency;
