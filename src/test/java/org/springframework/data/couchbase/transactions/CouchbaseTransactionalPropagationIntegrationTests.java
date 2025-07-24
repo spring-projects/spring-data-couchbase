@@ -42,7 +42,7 @@ import org.springframework.data.couchbase.transaction.error.TransactionSystemUna
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
