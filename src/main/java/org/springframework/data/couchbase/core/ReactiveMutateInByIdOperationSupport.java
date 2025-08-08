@@ -15,23 +15,29 @@
  */
 package org.springframework.data.couchbase.core;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
+import org.springframework.util.Assert;
+
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.MutateInOptions;
 import com.couchbase.client.java.kv.MutateInSpec;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.CouchbaseList;
-import org.springframework.data.couchbase.core.query.OptionsBuilder;
-import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.util.Assert;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import java.time.Duration;
-import java.util.*;
 
 /**
  * {@link ReactiveMutateInByIdOperation} implementations for Couchbase.
@@ -131,8 +137,8 @@ public class ReactiveMutateInByIdOperationSupport implements ReactiveMutateInByI
 
 		@Override
 		public TerminatingMutateInById<T> withOptions(final MutateInOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveMutateInByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ReactiveMutateInByIdSupport(template, domainType, scope, collection,
+					options != null ? options : this.options, persistTo, replicateTo,
 					durabilityLevel, expiry, support, removePaths, upsertPaths, insertPaths, replacePaths, provideCas);
 		}
 

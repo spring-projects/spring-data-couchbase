@@ -15,22 +15,22 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.kv.MutateInOptions;
-import com.couchbase.client.java.kv.MutateInSpec;
-import com.couchbase.client.java.kv.PersistTo;
-import com.couchbase.client.java.kv.ReplicateTo;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
-import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-import java.util.*;
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.MutateInOptions;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
 
 /**
  * {@link ExecutableMutateInByIdOperation} implementations for Couchbase.
@@ -49,7 +49,7 @@ public class ExecutableMutateInByIdOperationSupport implements ExecutableMutateI
 	@Override
 	public <T> ExecutableMutateInById<T> mutateInById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
-		return new ExecutableMutateInByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+		return new ExecutableMutateInByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
 				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
 				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType, template.getConverter()),
 				null, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
@@ -109,8 +109,8 @@ public class ExecutableMutateInByIdOperationSupport implements ExecutableMutateI
 
 		@Override
 		public TerminatingMutateInById<T> withOptions(final MutateInOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableMutateInByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableMutateInByIdSupport<>(template, domainType, scope, collection,
+					options != null ? options : this.options, persistTo, replicateTo,
 					durabilityLevel, expiry, removePaths, upsertPaths, insertPaths, replacePaths, provideCas);
 		}
 

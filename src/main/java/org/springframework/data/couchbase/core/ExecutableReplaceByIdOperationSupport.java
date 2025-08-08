@@ -113,8 +113,8 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 
 		@Override
 		public TerminatingReplaceById<T> withOptions(final ReplaceOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
+			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection,
+					options != null ? options : this.options, persistTo,
 					replicateTo, durabilityLevel, expiry);
 		}
 

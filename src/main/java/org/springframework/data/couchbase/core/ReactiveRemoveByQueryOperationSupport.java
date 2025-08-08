@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.api.query.CoreQueryContext;
-import com.couchbase.client.core.io.CollectionIdentifier;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;
@@ -28,8 +26,8 @@ import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
-import org.springframework.util.Assert;
 
+import com.couchbase.client.core.api.query.CoreQueryContext;
 import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.query.QueryOptions;
@@ -150,9 +148,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 		@Override
 		public RemoveByQueryWithQuery<T> withOptions(final QueryOptions options) {
-			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options);
+					options != null ? options : this.options);
 		}
 
 		@Override

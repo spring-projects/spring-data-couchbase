@@ -15,11 +15,10 @@
  */
 package org.springframework.data.couchbase.core;
 
-import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
 import static com.couchbase.client.java.kv.GetAndLockOptions.getAndLockOptions;
+import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
 import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
-import com.couchbase.client.java.kv.GetAndLockOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -40,7 +39,7 @@ import org.springframework.util.Assert;
 import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.CommonOptions;
 import com.couchbase.client.java.ReactiveCollection;
-import com.couchbase.client.java.codec.RawJsonTranscoder;
+import com.couchbase.client.java.kv.GetAndLockOptions;
 import com.couchbase.client.java.kv.GetAndTouchOptions;
 import com.couchbase.client.java.kv.GetOptions;
 
@@ -95,8 +94,11 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		@Override
 		public Mono<T> one(final Object id) {
 
-			CommonOptions<?> gOptions = initGetOptions();
-			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, domainType);
+			PseudoArgs<?> testPargs = new PseudoArgs(template, scope, collection, null, domainType);
+			CommonOptions<?> gOptions = testPargs.getOptions() != null ? (CommonOptions<?>) testPargs.getOptions()
+					: initGetOptions();
+			PseudoArgs<?> pArgs = new PseudoArgs(template, testPargs.getScope(), testPargs.getCollection(), gOptions,
+					domainType);
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("findById key={} {}", id, pArgs);
 			}
@@ -106,23 +108,31 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			Mono<T> reactiveEntity = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 				if (!ctxOpt.isPresent()) {
 					if (pArgs.getOptions() instanceof GetAndTouchOptions options) {
-						return rc.getAndTouch(id.toString(), expiryToUse, options)
-								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
-										pArgs.getScope(), pArgs.getCollection(), null, null));
+						return rc
+								.getAndTouch(id.toString(), expiryToUse,
+										buildOptions((GetAndTouchOptions) pArgs.getOptions()))
+								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class),
+										result.cas(), result.expiryTime().orElse(null), domainType, pArgs.getScope(),
+										pArgs.getCollection(), null, null));
 					} else if (pArgs.getOptions() instanceof GetAndLockOptions options) {
-						return rc.getAndLock(id.toString(), Optional.of(lockDuration).orElse(Duration.ZERO), options)
-								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
-										pArgs.getScope(), pArgs.getCollection(), null, null));
+						return rc
+								.getAndLock(id.toString(), Optional.of(lockDuration).orElse(Duration.ZERO),
+										buildOptions((GetAndLockOptions) pArgs.getOptions()))
+								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class),
+										result.cas(), result.expiryTime().orElse(null), domainType, pArgs.getScope(),
+										pArgs.getCollection(), null, null));
 					} else {
-						return rc.get(id.toString(), (GetOptions) pArgs.getOptions())
-								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+						return rc.get(id.toString(), buildOptions((GetOptions) pArgs.getOptions()))
+								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class),
+										result.cas(), result.expiryTime().orElse(null), domainType,
 										pArgs.getScope(), pArgs.getCollection(), null, null));
 					}
 				} else {
 					rejectInvalidTransactionalOptions();
 					return ctxOpt.get().getCore().get(makeCollectionIdentifier(rc.async()), id.toString())
 							.flatMap(result -> support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8),
-									result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null, null));
+									result.cas(), null, domainType, pArgs.getScope(), pArgs.getCollection(), null,
+									null));
 				}
 			});
 
@@ -161,10 +171,22 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			return Flux.fromIterable(ids).flatMap(this::one);
 		}
 
+		public GetOptions buildOptions(GetOptions options) {
+			return OptionsBuilder.buildGetOptions(options);
+		}
+
+		public GetAndTouchOptions buildOptions(GetAndTouchOptions options) {
+			return OptionsBuilder.buildGetAndTouchOptions(options);
+		}
+
+		public GetAndLockOptions buildOptions(GetAndLockOptions options) {
+			return OptionsBuilder.buildGetAndLockOptions(options);
+		}
+
 		@Override
 		public FindByIdInScope<T> withOptions(final GetOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, 
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection,
+					options != null ? options : this.options, fields, expiry,
 					lockDuration, support);
 		}
 
@@ -205,11 +227,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 					.getRequiredPersistentEntity(domainType);
 			Boolean isTouchOnRead = entity.isTouchOnRead();
 			if(lockDuration != null || options instanceof GetAndLockOptions) {
-				GetAndLockOptions gOptions = options != null ? (GetAndLockOptions) options : getAndLockOptions();
-				if (gOptions.build().transcoder() == null) {
-					gOptions.transcoder(RawJsonTranscoder.INSTANCE);
-				}
-				getOptions = gOptions;
+				getOptions = options != null ? (GetAndLockOptions) options : getAndLockOptions();
 			} else if (expiry != null || isTouchOnRead	|| options instanceof GetAndTouchOptions) {
 				if (expiry != null) {
 					expiryToUse = expiry;
@@ -218,16 +236,9 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 				} else {
 					expiryToUse = Duration.ZERO;
 				}
-				GetAndTouchOptions gOptions = options != null ? (GetAndTouchOptions) options : getAndTouchOptions();
-				if (gOptions.build().transcoder() == null) {
-					gOptions.transcoder(RawJsonTranscoder.INSTANCE);
-				}
-				getOptions = gOptions;
+				getOptions = options != null ? (GetAndTouchOptions) options : getAndTouchOptions();
 			} else {
 				GetOptions gOptions = options != null ? (GetOptions) options : GetOptions.getOptions();
-				if (gOptions.build().transcoder() == null) {
-					gOptions.transcoder(RawJsonTranscoder.INSTANCE);
-				}
 				if (fields != null && !fields.isEmpty()) {
 					gOptions.project(fields);
 				}

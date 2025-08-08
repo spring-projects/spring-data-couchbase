@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.api.query.CoreQueryContext;
-import com.couchbase.client.core.api.query.CoreQueryOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -29,6 +27,8 @@ import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.api.query.CoreQueryContext;
+import com.couchbase.client.core.api.query.CoreQueryOptions;
 import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.codec.JsonSerializer;
 import com.couchbase.client.java.query.QueryOptions;
@@ -109,9 +109,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public TerminatingFindByQuery<T> withOptions(final QueryOptions options) {
-			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, support);
+					collection, options != null ? options : this.options, distinctFields, fields, support);
 		}
 
 		@Override
@@ -228,8 +227,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 							row.removeKey(TemplateUtils.SELECT_ID);
 							row.removeKey(TemplateUtils.SELECT_CAS);
 						}
-						return support.decodeEntity(id, row.toString(), cas, returnType, pArgs.getScope(), pArgs.getCollection(),
-								null, null);
+						return support.decodeEntity(id, row.toString(), cas, null /* expiry from query */, returnType,
+								pArgs.getScope(), pArgs.getCollection(), null, null);
 					});
 		}
 

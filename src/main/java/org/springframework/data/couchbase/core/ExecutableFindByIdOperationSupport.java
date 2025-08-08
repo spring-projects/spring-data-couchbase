@@ -78,8 +78,8 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
 		@Override
 		public TerminatingFindById<T> withOptions(final GetOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, lockDuration);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection,
+					options != null ? options : this.options, fields, expiry, lockDuration);
 		}
 
 		@Override

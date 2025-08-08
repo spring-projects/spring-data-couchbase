@@ -16,6 +16,10 @@
 
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.CommonOptions;
+import com.couchbase.client.java.kv.InsertOptions;
+import com.couchbase.client.java.kv.ReplaceOptions;
+import com.couchbase.client.java.kv.UpsertOptions;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -86,6 +90,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 
 	@Override
 	public <T> T save(T entity, String... scopeAndCollection) {
+		return save(entity, null, scopeAndCollection);
+	}
+
+	@Override
+	public <T> T save(T entity, CommonOptions<?> options, String... scopeAndCollection) {
 			Assert.notNull(entity, "Entity must not be null!");
 
 			String scope = scopeAndCollection.length > 0 ? scopeAndCollection[0] : null;
@@ -109,10 +118,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 								if (ctx.isPresent()) {
 									return (T) insertById(clazz).inScope(scope)
 											.inCollection(collection)
+											.withOptions((InsertOptions) options)
 											.one(entity);
 								} else { // if not in a tx, then upsert will work
 									return (T) upsertById(clazz).inScope(scope)
 											.inCollection(collection)
+											.withOptions((UpsertOptions) options)
 											.one(entity);
 								}
 							}).block();
@@ -121,11 +132,13 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 					// Updating existing document with cas
 					return (T)replaceById(clazz).inScope(scope)
 							.inCollection(collection)
+							.withOptions((ReplaceOptions) options)
 							.one(entity);
 				} else { // there is a version property, but it's zero or not set.
 					// Creating new document
 					return (T)insertById(clazz).inScope(scope)
 							.inCollection(collection)
+							.withOptions((InsertOptions) options)
 							.one(entity);
 				}
 		}

@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 
+import com.couchbase.client.java.kv.GetOptions;
 import jakarta.validation.ConstraintViolationException;
 import junit.framework.AssertionFailedError;
 
@@ -811,9 +812,15 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Test
 	public void testExpiration() {
 		Airport airport = new Airport("1", "iata21", "icao21");
-		airportRepository.withOptions(InsertOptions.insertOptions().expiry(Duration.ofSeconds(10))).save(airport);
-		Airport foundAirport = airportRepository.findByIata(airport.getIata());
+
+		airportRepository.withOptions(InsertOptions.insertOptions().expiry(Duration.ofSeconds(100))).save(airport);
+		Airport foundAirportByQuery = airportRepository.findByIata(airport.getIata());
+		assertNotEquals(0, foundAirportByQuery.getExpiration());
+
+		Airport foundAirport = airportRepository.withOptions(GetOptions.getOptions().withExpiry(true))
+				.findById(airport.getId()).get();
 		assertNotEquals(0, foundAirport.getExpiration());
+
 		airportRepository.delete(airport);
 	}
 

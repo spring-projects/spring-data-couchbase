@@ -178,8 +178,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		@Override
 		public TerminatingReplaceById<T> withOptions(final ReplaceOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection,
+					options != null ? options : this.options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}
 

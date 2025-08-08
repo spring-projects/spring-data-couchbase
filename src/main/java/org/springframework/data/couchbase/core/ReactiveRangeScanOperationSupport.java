@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.util.Assert;
 
 import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.MutationState;
@@ -77,8 +76,8 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 
 		@Override
 		public TerminatingRangeScan<T> withOptions(final ScanOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, sort,
+			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection,
+					options != null ? options : this.options, sort,
 					mutationState, batchItemLimit, batchByteLimit, support);
 		}
 
@@ -163,8 +162,9 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 			Flux<T> reactiveEntities = TransactionalSupport.verifyNotInTransaction("rangeScan")
 					.thenMany(rc.scan(scanType, buildScanOptions(pArgs.getOptions(), false))
 							.flatMap(result -> support.decodeEntity(result.id(),
-									new String(result.contentAsBytes(), StandardCharsets.UTF_8), result.cas(), domainType,
-									pArgs.getScope(), pArgs.getCollection(), null, null)));
+									new String(result.contentAsBytes(), StandardCharsets.UTF_8), result.cas(),
+									result.expiryTime().orElse(null), domainType, pArgs.getScope(),
+									pArgs.getCollection(), null, null)));
 
 			return reactiveEntities.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {

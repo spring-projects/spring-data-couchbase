@@ -85,8 +85,8 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
 
 		@Override
 		public TerminatingUpsertById<T> withOptions(final UpsertOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableUpsertByIdSupport<>(template, domainType, scope, collection,
+					options != null ? options : this.options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}
 

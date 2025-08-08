@@ -43,6 +43,7 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 		implements CouchbasePersistentEntity<T>, EnvironmentAware {
 
 	private Environment environment;
+	private CouchbasePersistentProperty expiryProperty;
 
 	/**
 	 * Create a new entity.
@@ -82,6 +83,11 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 	@Override
 	protected CouchbasePersistentProperty returnPropertyIfBetterIdPropertyCandidateOrNull(
 			CouchbasePersistentProperty property) {
+
+		if (expiryProperty == null && property.isExpirationProperty()) {
+			expiryProperty = property;
+		}
+
 		if (!property.isIdProperty()) {
 			return null;
 		}
@@ -209,6 +215,11 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 	@Override
 	public CouchbasePersistentProperty getTextScoreProperty() {
 		return null;
+	}
+
+	@Override
+	public CouchbasePersistentProperty getExpiryProperty() {
+		return expiryProperty;
 	}
 
 }

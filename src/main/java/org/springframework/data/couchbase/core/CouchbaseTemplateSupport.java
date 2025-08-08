@@ -30,6 +30,8 @@ import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.util.Assert;
 
+import java.time.Instant;
+
 /**
  * Internal encode/decode support for CouchbaseTemplate.
  *
@@ -62,9 +64,9 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 	}
 
 	@Override
-	public <T> T decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-			Object txHolder, CouchbaseResourceHolder holder) {
-		return decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder, holder);
+	public <T> T decodeEntity(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass,
+			String scope, String collection, Object txHolder, CouchbaseResourceHolder holder) {
+		return decodeEntityBase(id, source, cas, expiryTime, entityClass, scope, collection, txHolder, holder);
 	}
 
 	@Override

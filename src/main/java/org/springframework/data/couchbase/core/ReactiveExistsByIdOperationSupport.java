@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.ExistsResult;
@@ -112,8 +111,8 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public TerminatingExistsById withOptions(final ExistsOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
+			return new ReactiveExistsByIdSupport(template, domainType, scope, collection,
+					options != null ? options : this.options);
 		}
 
 		@Override

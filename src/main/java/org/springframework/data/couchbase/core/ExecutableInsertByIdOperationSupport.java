@@ -85,8 +85,8 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 
 		@Override
 		public TerminatingInsertById<T> withOptions(final InsertOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection,
+					options != null ? options : this.options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}
 

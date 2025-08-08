@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.core;
 
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -69,10 +71,11 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope,
-			String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+	public <T> Mono<T> decodeEntity(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass,
+			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
 		return Mono
-				.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
+				.fromSupplier(() -> decodeEntityBase(id, source, cas, expiryTime, entityClass, scope, collection,
+						txResultHolder, holder));
 	}
 
 	@Override
