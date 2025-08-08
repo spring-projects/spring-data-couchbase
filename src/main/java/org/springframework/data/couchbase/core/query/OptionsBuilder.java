@@ -27,7 +27,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
-import com.couchbase.client.core.api.query.CoreQueryContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -40,6 +39,7 @@ import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 
+import com.couchbase.client.core.api.query.CoreQueryContext;
 import com.couchbase.client.core.api.query.CoreQueryScanConsistency;
 import com.couchbase.client.core.classic.query.ClassicCoreQueryOps;
 import com.couchbase.client.core.error.InvalidArgumentException;
@@ -49,6 +49,9 @@ import com.couchbase.client.core.retry.RetryStrategy;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.ExistsOptions;
+import com.couchbase.client.java.kv.GetAndLockOptions;
+import com.couchbase.client.java.kv.GetAndTouchOptions;
+import com.couchbase.client.java.kv.GetOptions;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.MutateInOptions;
 import com.couchbase.client.java.kv.MutationState;
@@ -154,6 +157,30 @@ public class OptionsBuilder {
 			LOG.debug("query options: {}", optsJson);
 		}
 		return txOptions;
+	}
+
+	public static GetOptions buildGetOptions(GetOptions options) {
+		options = options != null ? options : GetOptions.getOptions();
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("get options: {}" + toString(options));
+		}
+		return options;
+	}
+
+	public static GetAndTouchOptions buildGetAndTouchOptions(GetAndTouchOptions options) {
+		options = options != null ? options : GetAndTouchOptions.getAndTouchOptions();
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("getAndTouch options: {}" + toString(options));
+		}
+		return options;
+	}
+
+	public static GetAndLockOptions buildGetAndLockOptions(GetAndLockOptions options) {
+		options = options != null ? options : GetAndLockOptions.getAndLockOptions();
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("getAndLock options: {}" + toString(options));
+		}
+		return options;
 	}
 
 	public static ExistsOptions buildExistsOptions(ExistsOptions options) {
@@ -330,11 +357,53 @@ public class OptionsBuilder {
 		return null;
 	}
 
+	static String toString(GetOptions o) {
+		StringBuilder s = new StringBuilder();
+		GetOptions.Built b = o.build();
+		s.append("{");
+		s.append("withExpiry: " + b.withExpiry());
+		s.append(", transcoder: " + b.transcoder());
+		s.append(", timeout: " + b.timeout());
+		s.append(", retryStrategy: " + b.retryStrategy());
+		s.append(", clientContext: " + b.clientContext());
+		s.append(", parentSpan: " + b.parentSpan());
+		s.append("}");
+		return s.toString();
+	}
+
+	static String toString(GetAndLockOptions o) {
+		StringBuilder s = new StringBuilder();
+		GetAndLockOptions.Built b = o.build();
+		s.append("{");
+		s.append("transcoder: " + b.transcoder());
+		s.append(", timeout: " + b.timeout());
+		s.append(", retryStrategy: " + b.retryStrategy());
+		s.append(", clientContext: " + b.clientContext());
+		s.append(", parentSpan: " + b.parentSpan());
+		s.append("}");
+		return s.toString();
+	}
+
+	static String toString(GetAndTouchOptions o) {
+		StringBuilder s = new StringBuilder();
+		GetAndTouchOptions.Built b = o.build();
+		s.append("{");
+		s.append("transcoder: " + b.transcoder());
+		s.append(", timeout: " + b.timeout());
+		s.append(", retryStrategy: " + b.retryStrategy());
+		s.append(", clientContext: " + b.clientContext());
+		s.append(", parentSpan: " + b.parentSpan());
+		s.append("}");
+		return s.toString();
+	}
+
 	static String toString(InsertOptions o) {
 		StringBuilder s = new StringBuilder();
 		InsertOptions.Built b = o.build();
 		s.append("{");
-		s.append("durabilityLevel: " + b.durabilityLevel());
+		s.append("expiry: " + b.expiry());
+		s.append(", transcoder: " + b.transcoder());
+		s.append(", durabilityLevel: " + b.durabilityLevel());
 		s.append(", persistTo: " + b.persistTo());
 		s.append(", replicateTo: " + b.replicateTo());
 		s.append(", timeout: " + b.timeout());
@@ -349,7 +418,9 @@ public class OptionsBuilder {
 		StringBuilder s = new StringBuilder();
 		UpsertOptions.Built b = o.build();
 		s.append("{");
-		s.append("durabilityLevel: " + b.durabilityLevel());
+		s.append("expiry: " + b.expiry());
+		s.append(", transcoder: " + b.transcoder());
+		s.append(", durabilityLevel: " + b.durabilityLevel());
 		s.append(", persistTo: " + b.persistTo());
 		s.append(", replicateTo: " + b.replicateTo());
 		s.append(", timeout: " + b.timeout());
@@ -365,6 +436,8 @@ public class OptionsBuilder {
 		ReplaceOptions.Built b = o.build();
 		s.append("{");
 		s.append("cas: " + b.cas());
+		s.append(", expiry: " + b.expiry());
+		s.append(", transcoder: " + b.transcoder());
 		s.append(", durabilityLevel: " + b.durabilityLevel());
 		s.append(", persistTo: " + b.persistTo());
 		s.append(", replicateTo: " + b.replicateTo());
@@ -397,6 +470,7 @@ public class OptionsBuilder {
 		MutateInOptions.Built b = o.build();
 		s.append("{");
 		s.append("cas: " + b.cas());
+		s.append(", expiry: " + b.expiry());
 		s.append(", durabilityLevel: " + b.durabilityLevel());
 		s.append(", persistTo: " + b.persistTo());
 		s.append(", replicateTo: " + b.replicateTo());
@@ -572,4 +646,5 @@ public class OptionsBuilder {
               && (collection == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collection)) ? null
                   : CoreQueryContext.of(bucketName, scope);
         }
+
 }

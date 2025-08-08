@@ -139,7 +139,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 							}
 							row.removeKey(TemplateUtils.SELECT_ID);
 							row.removeKey(TemplateUtils.SELECT_CAS);
-							return support.decodeEntity(id, row.toString(), cas, returnType, null, null, null, null);
+							return support.decodeEntity(id, row.toString(), cas, null /* EXPIRY from query*/ ,
+									returnType, null, null, null, null);
 						});
 			});
 		}
@@ -170,9 +171,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 
 		@Override
 		public TerminatingFindByAnalytics<T> withOptions(final AnalyticsOptions options) {
-			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, support);
+					collection, options != null ? options : this.options, support);
 		}
 
 		@Override

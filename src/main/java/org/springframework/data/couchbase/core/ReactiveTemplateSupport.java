@@ -17,6 +17,8 @@ package org.springframework.data.couchbase.core;
 
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
+
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
@@ -30,8 +32,8 @@ public interface ReactiveTemplateSupport {
 
 	Mono<CouchbaseDocument> encodeEntity(Object entityToEncode);
 
-	<T> Mono<T> decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-			Object txResultHolder, CouchbaseResourceHolder holder);
+	<T> Mono<T> decodeEntity(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass, String scope,
+			String collection, Object txResultHolder, CouchbaseResourceHolder holder);
 
 	<T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
 			Object txResultHolder, CouchbaseResourceHolder holder);

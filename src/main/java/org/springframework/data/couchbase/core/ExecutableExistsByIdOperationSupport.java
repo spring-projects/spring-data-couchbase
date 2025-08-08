@@ -20,7 +20,6 @@ import java.util.Map;
 
 import org.springframework.data.couchbase.core.ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
-import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.ExistsOptions;
 
@@ -82,8 +81,8 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 
 		@Override
 		public TerminatingExistsById withOptions(final ExistsOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableExistsByIdSupport(template, domainType, scope, collection, options);
+			return new ExecutableExistsByIdSupport(template, domainType, scope, collection,
+					options != null ? options : this.options);
 		}
 
 		@Override

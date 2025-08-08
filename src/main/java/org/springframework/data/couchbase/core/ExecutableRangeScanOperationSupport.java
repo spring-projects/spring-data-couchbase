@@ -19,7 +19,6 @@ import java.util.stream.Stream;
 
 import org.springframework.data.couchbase.core.ReactiveRangeScanOperationSupport.ReactiveRangeScanSupport;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
-import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.ScanOptions;
@@ -70,8 +69,8 @@ public class ExecutableRangeScanOperationSupport implements ExecutableRangeScanO
 
 		@Override
 		public TerminatingRangeScan<T> withOptions(final ScanOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableRangeScanSupport<>(template, domainType, scope, collection, options, sort,
+			return new ExecutableRangeScanSupport<>(template, domainType, scope, collection,
+					options != null ? options : this.options, sort,
           mutationState, batchItemLimit, batchByteLimit);
 		}
 

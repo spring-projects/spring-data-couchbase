@@ -203,8 +203,9 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 
 		@Override
 		public TerminatingRemoveById withOptions(final RemoveOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ReactiveRemoveByIdSupport(
+					template, domainType, scope, collection,
+					options != null ? options : this.options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 

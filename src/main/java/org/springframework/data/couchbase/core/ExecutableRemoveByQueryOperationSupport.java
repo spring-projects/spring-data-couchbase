@@ -20,7 +20,6 @@ import java.util.List;
 import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -97,9 +96,8 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
 		@Override
 		public RemoveByQueryWithQuery<T> withOptions(final QueryOptions options) {
-			Assert.notNull(options, "Options must not be null.");
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options);
+					options != null ? options : this.options);
 		}
 
 		@Override

@@ -21,6 +21,8 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 
+import java.time.Instant;
+
 /**
  * Wrapper of {@link TemplateSupport} methods to adapt them to {@link ReactiveTemplateSupport}.
  *
@@ -42,9 +44,10 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-									Object txResultHolder, CouchbaseResourceHolder holder) {
-		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
+	public <T> Mono<T> decodeEntity(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass,
+			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, expiryTime, entityClass, scope, collection,
+				txResultHolder, holder));
 	}
 
 	@Override

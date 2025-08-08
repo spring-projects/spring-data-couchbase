@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository.support;
 
 import java.lang.reflect.AnnotatedElement;
 
+import com.couchbase.client.java.CommonOptions;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
@@ -108,6 +109,14 @@ public abstract class CouchbaseRepositoryBase<T, ID> {
 		String fromThreadLocal = pa != null ? pa.getCollection() : null;
 		return OptionsBuilder.fromFirst(CollectionIdentifier.DEFAULT_COLLECTION, fromThreadLocal, fromMetadata,
 				fromAnnotation);
+	}
+
+	/**
+	 * Get the options from repository.withOptions(...)
+	 */
+	protected CommonOptions<?> getOptions() {
+		PseudoArgs<CommonOptions<?>> pa = (PseudoArgs<CommonOptions<?>>) getReactiveTemplate().getPseudoArgs();
+		return pa != null ? pa.getOptions() : null;
 	}
 
 	protected abstract ReactiveCouchbaseTemplate getReactiveTemplate();

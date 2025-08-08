@@ -128,8 +128,8 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 		@Override
 		public TerminatingRemoveById withOptions(final RemoveOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection,
+					options != null ? options : this.options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 

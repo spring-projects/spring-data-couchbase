@@ -21,6 +21,10 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.java.codec.RawJsonTranscoder;
+import com.couchbase.client.java.kv.GetAndLockOptions;
+import com.couchbase.client.java.kv.GetAndTouchOptions;
+import com.couchbase.client.java.kv.GetOptions;
 
 /**
  * Determine the arguments to be used in the operation from various sources
@@ -29,7 +33,7 @@ import com.couchbase.client.core.io.CollectionIdentifier;
  * @param <OPTS>
  */
 public class PseudoArgs<OPTS> {
-	private final OPTS options;
+	private OPTS options;
 	private final String scopeName;
 	private final String collectionName;
 
@@ -113,6 +117,19 @@ public class PseudoArgs<OPTS> {
 		if (scopeForQuery != null && collectionForQuery == null) {
 			throw new CouchbaseException(
 					new IllegalArgumentException("if scope is not default or null, then collection must be specified"));
+		}
+		if (optionsForQuery instanceof GetAndLockOptions gOptions) {
+			if (gOptions.build().transcoder() == null) {
+				gOptions.transcoder(RawJsonTranscoder.INSTANCE);
+			}
+		} else if (optionsForQuery instanceof GetAndTouchOptions gOptions) {
+			if (gOptions.build().transcoder() == null) {
+				gOptions.transcoder(RawJsonTranscoder.INSTANCE);
+			}
+		} else if (optionsForQuery instanceof GetOptions gOptions) {
+			if (gOptions.build().transcoder() == null) {
+				gOptions.transcoder(RawJsonTranscoder.INSTANCE);
+			}
 		}
 		this.options = optionsForQuery;
 

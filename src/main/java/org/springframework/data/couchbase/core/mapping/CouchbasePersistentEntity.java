@@ -76,4 +76,6 @@ public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, Couchb
 	boolean hasTextScoreProperty();
 
 	CouchbasePersistentProperty getTextScoreProperty();
+
+	CouchbasePersistentProperty getExpiryProperty();
 }

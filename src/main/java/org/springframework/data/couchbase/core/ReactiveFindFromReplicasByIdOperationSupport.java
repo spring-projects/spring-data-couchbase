@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.util.Assert;
 
 import com.couchbase.client.java.codec.RawJsonTranscoder;
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
@@ -86,8 +85,9 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 			return TransactionalSupport.verifyNotInTransaction("findFromReplicasById").then(Mono.just(id))
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))
-					.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType,
-							pArgs.getScope(), pArgs.getCollection(), null, null))
+					.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(),
+							result.expiryTime().orElse(null), returnType, pArgs.getScope(), pArgs.getCollection(), null,
+							null))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -104,8 +104,8 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 
 		@Override
 		public TerminatingFindFromReplicasById<T> withOptions(final GetAnyReplicaOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options,
+			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection,
+					options != null ? options : this.options,
 					support);
 		}
 

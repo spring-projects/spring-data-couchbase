@@ -168,9 +168,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
 		@Override
 		public TerminatingFindByQuery<T> withOptions(final QueryOptions options) {
-			Assert.notNull(options, "Options must not be null.");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields);
+					collection, options != null ? options : this.options, distinctFields, fields);
 		}
 
 		@Override

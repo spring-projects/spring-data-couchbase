@@ -92,9 +92,8 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 
 		@Override
 		public FindByAnalyticsWithQuery<T> withOptions(final AnalyticsOptions options) {
-			Assert.notNull(options, "Options must not be null.");
 			return new ExecutableFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options);
+					collection, options != null ? options : this.options);
 		}
 
 		@Override

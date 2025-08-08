@@ -19,7 +19,6 @@ import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveFindFromReplicasByIdOperationSupport.ReactiveFindFromReplicasByIdSupport;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
-import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
 
@@ -71,8 +70,8 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 
 		@Override
 		public TerminatingFindFromReplicasById<T> withOptions(final GetAnyReplicaOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
+			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection,
+					options != null ? options : this.options);
 		}
 
 		@Override

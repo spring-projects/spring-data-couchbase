@@ -122,8 +122,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		@Override
 		public TerminatingUpsertById<T> withOptions(final UpsertOptions options) {
-			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveUpsertByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ReactiveUpsertByIdSupport(template, domainType, scope, collection,
+					options != null ? options : this.options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}
 
