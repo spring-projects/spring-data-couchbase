@@ -708,6 +708,8 @@ class ReactiveCouchbaseTemplateQueryCollectionIntegrationTests extends Collectio
 			Airport found = template.findFromReplicasById(Airport.class).inScope(otherScope).inCollection(otherCollection)
 					.withOptions(options).any(saved.getId()).block();
 			assertNull(found, "should not have found document in short timeout");
+		}catch (UnambiguousTimeoutException e) {
+			/* waitForBucketConfig() may have timed-out */
 		} finally {
 			template.removeById().inScope(otherScope).inCollection(otherCollection).one(saved.getId()).block();
 		}

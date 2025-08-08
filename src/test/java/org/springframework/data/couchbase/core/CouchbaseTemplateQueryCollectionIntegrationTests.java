@@ -713,6 +713,8 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 			Airport found = couchbaseTemplate.findFromReplicasById(Airport.class).inScope(otherScope)
 					.inCollection(otherCollection).withOptions(options).any(saved.getId());
 			assertNull(found, "should not have found document in short timeout");
+		}catch (UnambiguousTimeoutException e) {
+			/* waitForBucketConfig() may have timed-out */
 		} finally {
 			couchbaseTemplate.removeById().inScope(otherScope).inCollection(otherCollection).one(saved.getId());
 		}
