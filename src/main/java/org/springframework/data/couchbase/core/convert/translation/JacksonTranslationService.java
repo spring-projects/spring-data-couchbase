@@ -28,12 +28,13 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.ObjectWriteContext;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * A Jackson JSON Translator that implements the {@link TranslationService} contract.
@@ -71,7 +72,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 		Writer writer = new StringWriter();
 
 		try {
-			JsonGenerator generator = factory.createGenerator(writer);
+			JsonGenerator generator = factory.createGenerator(ObjectWriteContext.empty(),writer);
 			encodeRecursive(source, generator);
 			generator.close();
 			writer.close();
@@ -95,7 +96,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 		for (Map.Entry<String, Object> entry : ((CouchbaseDocument) source).export().entrySet()) {
 			String key = entry.getKey();
 			Object value = entry.getValue();
-			generator.writeFieldName(key);
+			generator.writeName(key);
 			if (value instanceof CouchbaseDocument) {
 				encodeRecursive((CouchbaseDocument) value, generator);
 				continue;
@@ -104,13 +105,12 @@ public class JacksonTranslationService implements TranslationService, Initializi
 			final Class<?> clazz = value.getClass();
 
 			if (simpleTypeHolder.isSimpleType(clazz) && !isEnumOrClass(clazz)) {
-				generator.writeObject(value);
+				generator.writePOJO(value);
 			} else {
 				objectMapper.writeValue(generator, value);
 			}
 
 		}
-
 		generator.writeEndObject();
 	}
 
@@ -130,7 +130,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 		try {
 			JsonParser parser = factory.createParser((String) source);
 			while (parser.nextToken() != null) {
-				JsonToken currentToken = parser.getCurrentToken();
+				JsonToken currentToken = parser.currentToken();
 
 				if (currentToken == JsonToken.START_OBJECT) {
 					return decodeObject(parser, (CouchbaseDocument) target);
@@ -164,8 +164,8 @@ public class JacksonTranslationService implements TranslationService, Initializi
 				target.put(fieldName, decodeObject(parser, new CouchbaseDocument()));
 			} else if (currentToken == JsonToken.START_ARRAY) {
 				target.put(fieldName, decodeArray(parser, new CouchbaseList()));
-			} else if (currentToken == JsonToken.FIELD_NAME) {
-				fieldName = parser.getCurrentName();
+			} else if (currentToken == JsonToken.PROPERTY_NAME) {
+				fieldName = parser.currentName();
 			} else {
 				target.put(fieldName, decodePrimitive(currentToken, parser));
 			}
@@ -230,11 +230,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 
 	@Override
 	public <T> T decodeFragment(String source, Class<T> target) {
-		try {
 			return objectMapper.readValue(source, target);
-		} catch (IOException e) {
-			throw new RuntimeException("Cannot decode ad-hoc JSON", e);
-		}
 	}
 
 	public void setObjectMapper(final ObjectMapper objectMapper) {
@@ -246,7 +242,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 		if (objectMapper == null) {
 			objectMapper = new ObjectMapper();
 		}
-		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		// Jackson3 objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	}
 
 }

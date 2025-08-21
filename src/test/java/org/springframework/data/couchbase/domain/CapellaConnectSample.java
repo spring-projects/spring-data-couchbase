@@ -48,7 +48,7 @@ import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.couchbase.client.java.query.QueryResult;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Sample code for connecting to Capella through both the control-plane and the data-plane. An Access Key and a Secret
@@ -162,11 +162,7 @@ public class CapellaConnectSample {
 			throw new RuntimeException(e);
 		}
 
-		try {
-			decoded = (Map<String, Object>) MAPPER.readValue(responseString.getBytes(UTF_8), Map.class);
-		} catch (IOException e) {
-			throw new RuntimeException("Error decoding, raw: " + responseString, e);
-		}
+		decoded = (Map<String, Object>) MAPPER.readValue(responseString.getBytes(UTF_8), Map.class);
 		return decoded;
 	}
 

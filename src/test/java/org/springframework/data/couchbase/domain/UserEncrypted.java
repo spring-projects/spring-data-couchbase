@@ -254,7 +254,7 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 
 		nicknames = List.of("Happy", "Sleepy");
 
-		turbulence = ETurbulenceCategory.T10;
+		// turbulence = ETurbulenceCategory.T10;
 
 	}
 }

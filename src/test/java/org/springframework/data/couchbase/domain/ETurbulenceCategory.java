@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.domain;
 
+
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
@@ -33,6 +34,10 @@ public enum ETurbulenceCategory {
 
 	@JsonValue
 	public String getCode() {
+
+		for(Enum e:this.getClass().getEnumConstants())
+		System.err.println("VALUE: " +e.name());
 		return code;
+
 	}
 }

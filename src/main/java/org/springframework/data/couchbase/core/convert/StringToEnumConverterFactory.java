@@ -22,7 +22,19 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.encryption.CryptoManager;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationConfig;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationConfig;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.deser.jdk.EnumDeserializer;
+import tools.jackson.databind.introspect.AnnotatedMethod;
+
+import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 /**
  * Reading Converter factory for Enums. This differs from the one provided in org.springframework.core.convert.support
@@ -71,6 +83,20 @@ public class StringToEnumConverterFactory implements ConverterFactory<String, En
 			if (source == null) {
 				return null;
 			}
+			/*
+			JavaType toValueType;
+      toValueType = objectMapper.getTypeFactory().constructType(enumType);
+      EnumDeserializer deser = (EnumDeserializer) objectMapper._deserializationContext().findRootValueDeserializer(toValueType);
+			DeserializationConfig config = objectMapper.deserializationConfig().without(DeserializationFeature.WRAP_EXCEPTIONS);
+			AnnotatedMethod factorymethods = null;
+			try {
+				factorymethods = enumType.getAnnotatedInterfaces();
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
+      deser.deserializerForCreator( config, enumType, factorymethod, deser.getValueInstantiator(), null);
+      */
+
 			return objectMapper.convertValue(source, enumType);
 		}
 	}

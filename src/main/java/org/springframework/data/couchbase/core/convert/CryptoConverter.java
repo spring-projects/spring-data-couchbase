@@ -38,8 +38,8 @@ import com.couchbase.client.java.encryption.annotation.Encrypted;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import tools.jackson.core.json.JsonProcessingException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Encrypt/Decrypted properties annotated. This is registered in
@@ -64,6 +64,7 @@ public class CryptoConverter implements
 		if (decrypted == null) {
 			return null;
 		}
+
 		// it's decrypted to byte[]. Now figure out how to convert to the property type.
 		return coerceToValueRead(decrypted, (CouchbaseConversionContext) context);
 	}
@@ -127,11 +128,7 @@ public class CryptoConverter implements
 			String plainString = value != null ? value.toString() : null;
 			if ((sourceType == String.class || targetType == String.class) || sourceType == Character.class
 					|| sourceType == char.class || sourceType.isEnum() || Locale.class.isAssignableFrom(sourceType)) {
-				try {
 					plainString = objectMapper.writeValueAsString(plainString);// put quotes around strings
-				} catch (JsonProcessingException e) {
-					throw new RuntimeException(e);
-				}
 			}
 			plainText = plainString.getBytes(StandardCharsets.UTF_8);
 		} else { // an entity

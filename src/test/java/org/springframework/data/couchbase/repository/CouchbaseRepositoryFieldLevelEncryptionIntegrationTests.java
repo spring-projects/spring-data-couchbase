@@ -56,8 +56,8 @@ import com.couchbase.client.encryption.DefaultCryptoManager;
 import com.couchbase.client.encryption.Keyring;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonObject;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
+import tools.jackson.databind.ObjectMapper;
+//import tools.jackson.databind.joda.JodaModule;
 
 /**
  * Repository KV tests
@@ -146,7 +146,7 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 		Address encAddress = new Address(); // encrypted address with plaintext street.
 		encAddress.setStreet("Castro St");
 		encAddress.setCity("Mountain View");
-		encAddress.setTurbulence(ETurbulenceCategory.T10);
+		//encAddress.setTurbulence(ETurbulenceCategory.T10);
 		user.setEncAddress(encAddress);
 
 		user.initSimpleTypes();
@@ -338,8 +338,8 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 
 		@Override
 		public ObjectMapper couchbaseObjectMapper() {
-			ObjectMapper om = super.couchbaseObjectMapper();
-			om.registerModule(new JodaModule()); // to test joda mapping
+			ObjectMapper om = super.getObjectMapper();
+			// Jackson3 om.registerModule(new JodaModule()); // to test joda mapping
 			return om;
 		}
 

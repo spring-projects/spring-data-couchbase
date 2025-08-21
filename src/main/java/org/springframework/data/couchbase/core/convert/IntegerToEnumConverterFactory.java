@@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.encryption.CryptoManager;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Reading Converter factory for Enums. This differs from the one provided in org.springframework.core.convert.support
@@ -73,12 +73,7 @@ public class IntegerToEnumConverterFactory implements ConverterFactory<Integer, 
 			if (source == null) {
 				return null;
 			}
-			try {
-				return objectMapper.readValue(source.toString(), enumType);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-
+			return objectMapper.readValue(source.toString(), enumType);
 		}
 	}
 }

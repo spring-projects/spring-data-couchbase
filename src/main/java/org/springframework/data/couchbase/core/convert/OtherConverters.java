@@ -41,11 +41,11 @@ import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValueModule;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Out of the box conversions for Other types.
@@ -232,7 +232,7 @@ public final class OtherConverters {
 	@WritingConverter
 	public enum JsonNodeToMap implements Converter<JsonNode, CouchbaseDocument> {
 		INSTANCE;
-		static ObjectMapper mapper= new ObjectMapper().registerModule(new JsonValueModule());
+		static ObjectMapper mapper= new ObjectMapper(); // Jackson3 registerModule(new JsonValueModule());
 		@Override
 		public CouchbaseDocument convert(JsonNode source) {
 			if( source == null ){
@@ -245,7 +245,7 @@ public final class OtherConverters {
 	@ReadingConverter
 	public enum MapToJsonNode implements Converter<CouchbaseDocument, JsonNode> {
 		INSTANCE;
-		static ObjectMapper mapper= new ObjectMapper().registerModule(new JsonValueModule());
+		static ObjectMapper mapper= new ObjectMapper(); // Jackson3 .registerModule(new JsonValueModule());
 
 		@Override
 		public JsonNode convert(CouchbaseDocument source) {

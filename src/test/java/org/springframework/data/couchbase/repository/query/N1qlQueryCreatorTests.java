@@ -34,7 +34,6 @@ import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
@@ -52,7 +51,6 @@ import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.parser.PartTree;
 
 import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.json.JsonObject;
 
 /**
  * @author Michael Nitschinger

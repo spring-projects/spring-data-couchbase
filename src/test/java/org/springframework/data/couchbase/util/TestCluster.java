@@ -32,7 +32,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
 	protected static final ObjectMapper MAPPER = new ObjectMapper();
@@ -123,12 +123,8 @@ abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
 	@SuppressWarnings({ "unchecked" })
 	protected List<TestNodeConfig> nodesFromRaw(final String inputHost, final String config) {
 		List<TestNodeConfig> result = new ArrayList<>();
-		Map<String, Object> decoded;
-		try {
-			decoded = (Map<String, Object>) MAPPER.readValue(config.getBytes(UTF_8), Map.class);
-		} catch (IOException e) {
-			throw new RuntimeException("Error decoding, raw: " + config, e);
-		}
+		Map<String, Object> decoded = (Map<String, Object>) MAPPER.readValue(config.getBytes(UTF_8), Map.class);
+
 		List<Map<String, Object>> ext = (List<Map<String, Object>>) decoded.get("nodesExt");
 		for (Map<String, Object> node : ext) {
 			Map<String, Integer> services = (Map<String, Integer>) node.get("services");
@@ -179,24 +175,14 @@ abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
 	}
 
 	protected int replicasFromRaw(final String config) {
-		Map<String, Object> decoded;
-		try {
-			decoded = (Map<String, Object>) MAPPER.readValue(config.getBytes(UTF_8), Map.class);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		Map<String, Object> decoded = (Map<String, Object>) MAPPER.readValue(config.getBytes(UTF_8), Map.class);
 		Map<String, Object> serverMap = (Map<String, Object>) decoded.get("vBucketServerMap");
 		return (int) serverMap.get("numReplicas");
 	}
 
 	protected Set<Capabilities> capabilitiesFromRaw(final String config) {
 		Set<Capabilities> capabilities = new HashSet<>();
-		Map<String, Object> decoded;
-		try {
-			decoded = (Map<String, Object>) MAPPER.readValue(config.getBytes(UTF_8), Map.class);
-		} catch (IOException e) {
-			throw new RuntimeException("Error decoding, raw: " + config, e);
-		}
+		Map<String, Object> decoded = (Map<String, Object>) MAPPER.readValue(config.getBytes(UTF_8), Map.class);
 		List<Map<String, Object>> ext = (List<Map<String, Object>>) decoded.get("nodesExt");
 
 		for (Map<String, Object> node : ext) {

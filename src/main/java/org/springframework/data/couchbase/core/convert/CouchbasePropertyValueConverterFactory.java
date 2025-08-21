@@ -31,7 +31,7 @@ import org.springframework.data.mapping.PersistentProperty;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Accept the Couchbase @Encrypted and @JsonValue annotations in addition to @ValueConverter annotation.<br>

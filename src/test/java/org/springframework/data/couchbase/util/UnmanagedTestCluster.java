@@ -157,12 +157,7 @@ public class UnmanagedTestCluster extends TestCluster {
 
 			String raw = getResponse.body().string();
 
-			Map<String, Object> decoded;
-			try {
-				decoded = (Map<String, Object>) MAPPER.readValue(raw, Map.class);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
+			Map<String, Object> decoded = (Map<String, Object>) MAPPER.readValue(raw, Map.class);
 
 			List<Map<String, Object>> nodes = (List<Map<String, Object>>) decoded.get("nodes");
 			int healthy = 0;

@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.config;
 import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 
 import java.lang.annotation.Annotation;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.couchbase.client.java.codec.JsonSerializer;
+import com.couchbase.client.java.codec.TypeRef;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -85,8 +88,13 @@ import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonValueModule;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.TSFBuilder;
+import tools.jackson.core.TokenStreamFactory;
+import tools.jackson.core.json.JsonFactoryBuilder;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -172,7 +180,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		if (!nonShadowedJacksonPresent()) {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
-		builder.jsonSerializer(JacksonJsonSerializer.create(getObjectMapper()));
+		builder.jsonSerializer(MyJacksonJsonSerializer.create(getObjectMapper()));
 		builder.cryptoManager(getCryptoManager());
 		configureEnvironment(builder);
 		return builder.build();
@@ -314,11 +322,11 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mappingContext;
 	}
 
-	final public ObjectMapper getObjectMapper() {
+	final public ObjectMapper getObjectMapper(JacksonModule... modules) {
 		if (objectMapper == null) {
 			synchronized (this) {
 				if (objectMapper == null) {
-					objectMapper = couchbaseObjectMapper();
+					objectMapper = couchbaseObjectMapper(modules);
 				}
 			}
 		}
@@ -331,13 +339,15 @@ public abstract class AbstractCouchbaseConfiguration {
 	 *
 	 * @return ObjectMapper
 	 */
-	protected ObjectMapper couchbaseObjectMapper() {
-		ObjectMapper om = new ObjectMapper();
-		om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		om.registerModule(new JsonValueModule());
+	protected ObjectMapper couchbaseObjectMapper(JacksonModule... modules) {
+		JsonMapper.Builder builder =  JsonMapper.builder();
+		// builder.addModule(new JsonValueModule());
+		for( JacksonModule m : modules )
+		   builder.addModule(m);
 		if (getCryptoManager() != null) {
-			om.registerModule(new EncryptionModule(getCryptoManager()));
+			//builder.addModule(new EncryptionModule(getCryptoManager()));
 		}
+		ObjectMapper om = builder.build();
 		return om;
 	}
 
@@ -518,14 +528,34 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	private boolean nonShadowedJacksonPresent() {
 		try {
-			JacksonJsonSerializer.preflightCheck();
+			Jackson3PreflightCheck();
 			return true;
 		} catch (Throwable t) {
-			return false;
+		throw new RuntimeException(t);
 		}
+
 	}
 
 	public QueryScanConsistency getDefaultConsistency() {
 		return null;
 	}
+
+	public static void Jackson3PreflightCheck() throws Throwable {
+		JsonSerializer serializer = MyJacksonJsonSerializer.create();
+		MyJacksonJsonSerializer.PreflightCheckSubject serializeMe = new MyJacksonJsonSerializer.PreflightCheckSubject();
+		serializeMe.name = "x";
+		byte[] json = serializer.serialize(serializeMe);
+		String expected = "{\"n\":\"x\"}";
+		String actual = new String(json, StandardCharsets.UTF_8);
+		if (!expected.equals(actual)) {
+			throw new RuntimeException("Serialization failed; expected " + expected + " but got " + actual);
+		} else {
+			MyJacksonJsonSerializer.PreflightCheckSubject deserialized = (MyJacksonJsonSerializer.PreflightCheckSubject)serializer.deserialize(new TypeRef<MyJacksonJsonSerializer.PreflightCheckSubject>() {
+			}, json);
+			if (!"x".equals(deserialized.name)) {
+				throw new RuntimeException("Deserialization failed; expected 'x' but got '" + deserialized.name + "'");
+			}
+		}
+	}
+
 }
