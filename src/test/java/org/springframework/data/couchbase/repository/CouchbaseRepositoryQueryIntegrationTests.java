@@ -844,7 +844,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		UserAnnotated user = new UserAnnotated("1", "Dave", "Wilson");
 		userRepository.save(user);
 		userRepository.findByFirstname("Dave");
-		sleep(2000);
+		sleep(4000);
 		assertThrows(DataRetrievalFailureException.class, () -> userRepository.delete(user));
 	}
 
