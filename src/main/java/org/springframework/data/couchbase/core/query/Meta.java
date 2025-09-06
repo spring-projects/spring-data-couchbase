@@ -83,7 +83,7 @@ public class Meta {
 
 		Assert.hasText(key, "Meta key must not be 'null' or blank.");
 
-		if (value == null || (value instanceof String && !StringUtils.hasText((String) value))) {
+		if (value == null || (value instanceof String str && !StringUtils.hasText(str))) {
 			this.values.remove(MetaKey.valueOf(key));
 		}
 		this.values.put(MetaKey.valueOf(key), value);
@@ -91,7 +91,7 @@ public class Meta {
 
 	public void setValue(MetaKey key, @Nullable Object value) {
 
-		if (value == null || (value instanceof String && !StringUtils.hasText((String) value))) {
+		if (value == null || (value instanceof String str && !StringUtils.hasText(str))) {
 			this.values.remove(key);
 		}
 		this.values.put(key, value);
@@ -99,7 +99,7 @@ public class Meta {
 
 	public void set(MetaKey key, @Nullable Object value) {
 
-		if (value == null || (value instanceof String && !StringUtils.hasText((String) value))) {
+		if (value == null || (value instanceof String str && !StringUtils.hasText(str))) {
 			this.values.remove(key);
 		}
 		this.values.put(key, value);
