@@ -29,18 +29,6 @@
         <querydsl_of>6.11</querydsl_of>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
 
         <dependency>
@@ -130,12 +118,6 @@
             <artifactId>joda-time</artifactId>
             <version>${jodatime}</version>
             <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <!-- JSR 303 Validation -->
