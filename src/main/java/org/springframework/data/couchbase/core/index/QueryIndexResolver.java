@@ -15,12 +15,12 @@
  */
 package org.springframework.data.couchbase.core.index;
 
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
 /**

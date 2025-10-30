@@ -19,12 +19,12 @@ package org.springframework.data.couchbase.core.convert;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.EntityConverter;
 import org.springframework.data.convert.EntityReader;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
-import org.springframework.data.util.TypeInformation;
 
 /**
  * Marker interface for the converter, identifying the types to and from that can be converted.
@@ -78,7 +78,7 @@ public interface CouchbaseConverter
 
 	/**
 	 * return the conversions
-	 * 
+	 *
 	 * @return conversions
 	 */
 	CustomConversions getConversions();

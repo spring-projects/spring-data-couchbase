@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core.query;
 
-import static org.springframework.util.Assert.notNull;
+import static org.springframework.util.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +25,8 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
@@ -34,7 +36,6 @@ import org.springframework.data.couchbase.repository.support.MappingCouchbaseEnt
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.Alias;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.json.JsonArray;
@@ -410,7 +411,7 @@ public class Query {
 	/**
 	 * this collections annotations from the method, repository class and possibly the entity class to be used as options.
 	 * This will find annotations included in composed annotations as well. Ideally
-	 * 
+	 *
 	 * @param method representing the query.
 	 */
 	public void setMeta(CouchbaseQueryMethod method, Class<?> typeToRead) {

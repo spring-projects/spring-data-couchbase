@@ -16,10 +16,8 @@
 
 package org.springframework.data.couchbase.core.convert.join;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
-import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
-import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationHandler;
@@ -28,6 +26,8 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -43,7 +43,6 @@ import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
@@ -180,7 +179,7 @@ public class N1qlJoinResolver {
 
 	/**
 	 * from CouchbaseQueryMethod.getCollection()
-	 * 
+	 *
 	 * @param targetClass
 	 * @return
 	 */
@@ -193,7 +192,7 @@ public class N1qlJoinResolver {
 
 	/**
 	 * from CouchbaseQueryMethod.getScope()
-	 * 
+	 *
 	 * @param targetClass
 	 * @return
 	 */

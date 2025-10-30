@@ -2,8 +2,8 @@ package org.springframework.data.couchbase.domain;
 
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.convert.SimpleTypeInformationMapper;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.mapping.Alias;
-import org.springframework.data.util.TypeInformation;
 
 public class TypeAwareTypeInformationMapper extends SimpleTypeInformationMapper {
 

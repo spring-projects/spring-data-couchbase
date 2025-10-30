@@ -17,6 +17,7 @@ package org.springframework.data.couchbase.core.query;
 
 import java.util.Locale;
 
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
@@ -26,7 +27,6 @@ import org.springframework.data.couchbase.repository.support.MappingCouchbaseEnt
 import org.springframework.data.mapping.Alias;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ValueExpressionDelegate;
-import org.springframework.data.util.TypeInformation;
 
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;

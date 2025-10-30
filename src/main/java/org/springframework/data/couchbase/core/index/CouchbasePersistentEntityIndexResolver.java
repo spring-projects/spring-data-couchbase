@@ -15,14 +15,16 @@
  */
 package org.springframework.data.couchbase.core.index;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.jspecify.annotations.Nullable;
+
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -31,8 +33,6 @@ import org.springframework.data.couchbase.repository.support.MappingCouchbaseEnt
 import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.util.TypeInformation;
-import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 

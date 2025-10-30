@@ -18,7 +18,10 @@ package org.springframework.data.couchbase.repository.query;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
+
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
@@ -29,8 +32,6 @@ import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.ValueExpressionDelegate;
-import org.springframework.data.util.TypeInformation;
-import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 /**

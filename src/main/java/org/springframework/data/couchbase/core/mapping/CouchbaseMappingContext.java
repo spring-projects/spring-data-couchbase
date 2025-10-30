@@ -22,6 +22,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexCreator;
 import org.springframework.data.mapping.context.AbstractMappingContext;
 import org.springframework.data.mapping.context.MappingContextEvent;
@@ -29,7 +30,6 @@ import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
-import org.springframework.data.util.TypeInformation;
 
 /**
  * Default implementation of a {@link org.springframework.data.mapping.context.MappingContext} for Couchbase using
@@ -151,7 +151,7 @@ public class CouchbaseMappingContext
 	/**
 	 * override method from AbstractMappingContext as that method will not publishEvent() if it finds the entity has
 	 * already been cached. Instead, user our own addPersistEntity that will.
-	 * 
+	 *
 	 * @param typeInformation - entity type
 	 */
 	@Override
@@ -163,7 +163,7 @@ public class CouchbaseMappingContext
 	/**
 	 * capture the indexCreator when it has been added as a listener. only publishEvent() if the indexCreator hasn't
 	 * already seen the class.
-	 * 
+	 *
 	 * @param indexCreator
 	 */
 	public void setIndexCreator(CouchbasePersistentEntityIndexCreator indexCreator) {

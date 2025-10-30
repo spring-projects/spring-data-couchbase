@@ -17,19 +17,18 @@
 package org.springframework.data.couchbase.core.convert;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.mapping.model.EntityInstantiators;
-import org.springframework.data.util.TypeInformation;
 
 /**
  * An abstract {@link CouchbaseConverter} that provides the basics for the {@link MappingCouchbaseConverter}.

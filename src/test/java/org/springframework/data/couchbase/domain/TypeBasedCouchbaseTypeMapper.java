@@ -1,13 +1,13 @@
 package org.springframework.data.couchbase.domain;
 
+import java.util.Collections;
+
 import org.springframework.data.convert.DefaultTypeMapper;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.convert.CouchbaseTypeMapper;
 import org.springframework.data.couchbase.core.convert.DefaultCouchbaseTypeMapper;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.mapping.Alias;
-import org.springframework.data.util.TypeInformation;
-
-import java.util.Collections;
 
 public class TypeBasedCouchbaseTypeMapper extends DefaultTypeMapper<CouchbaseDocument> implements CouchbaseTypeMapper {
 

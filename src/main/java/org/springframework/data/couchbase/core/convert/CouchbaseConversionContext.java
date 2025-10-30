@@ -15,11 +15,12 @@
  */
 package org.springframework.data.couchbase.core.convert;
 
+import org.jspecify.annotations.Nullable;
+
 import org.springframework.data.convert.ValueConversionContext;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
-import org.springframework.data.util.TypeInformation;
-import org.jspecify.annotations.Nullable;
 
 /**
  * {@link ValueConversionContext} that allows to delegate read/write to an underlying {@link CouchbaseConverter}.

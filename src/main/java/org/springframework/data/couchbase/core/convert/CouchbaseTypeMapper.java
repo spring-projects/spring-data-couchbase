@@ -17,9 +17,9 @@
 package org.springframework.data.couchbase.core.convert;
 
 import org.springframework.data.convert.TypeMapper;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.mapping.Alias;
-import org.springframework.data.util.TypeInformation;
 
 /**
  * Marker interface for the TypeMapper.

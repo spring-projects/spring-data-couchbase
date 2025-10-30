@@ -17,8 +17,8 @@ package org.springframework.data.couchbase.core.convert;
 
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.convert.SimpleTypeInformationMapper;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.mapping.Alias;
-import org.springframework.data.util.TypeInformation;
 
 /**
  * TypeAwareTypeInformationMapper - leverages @TypeAlias

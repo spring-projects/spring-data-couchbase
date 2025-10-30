@@ -19,7 +19,7 @@ package org.springframework.data.couchbase.repository.query;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.springframework.data.mapping.PropertyPath;
+import org.springframework.data.core.PropertyPath;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 

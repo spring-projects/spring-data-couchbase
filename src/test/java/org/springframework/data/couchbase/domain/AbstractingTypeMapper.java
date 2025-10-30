@@ -20,14 +20,14 @@ import java.util.Collections;
 
 import org.springframework.data.convert.DefaultTypeMapper;
 import org.springframework.data.convert.TypeAliasAccessor;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.convert.CouchbaseTypeMapper;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.util.TypeInformation;
 
 /**
- * TypeMapper that leverages subtype 
+ * TypeMapper that leverages subtype
  *
  * @author Michael Reiche
  */

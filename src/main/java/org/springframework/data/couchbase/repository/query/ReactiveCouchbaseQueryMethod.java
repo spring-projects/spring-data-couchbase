@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.repository.query;
 import java.lang.reflect.Method;
 
 import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.core.ReactiveWrappers;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.domain.Page;
@@ -28,9 +30,7 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.util.Lazy;
-import org.springframework.data.util.ReactiveWrappers;
 import org.springframework.data.util.ReflectionUtils;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.util.ClassUtils;
 
 /**

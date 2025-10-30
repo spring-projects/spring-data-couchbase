@@ -16,20 +16,15 @@
 
 package org.springframework.data.couchbase.repository.query.support;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.count;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.meta;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.path;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.select;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
-import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
-import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.core.PropertyPath;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -41,10 +36,8 @@ import org.springframework.data.couchbase.repository.query.CountFragment;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.PersistentPropertyPath;
-import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.query.ReturnedType;
-import org.springframework.data.util.TypeInformation;
 
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
