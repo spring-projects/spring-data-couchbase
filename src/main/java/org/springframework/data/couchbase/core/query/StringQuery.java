@@ -76,8 +76,8 @@ public class StringQuery extends Query {
 		String queryString = parsedExpression.toString();
 
 		JsonValue parameters = parser.getPlaceholderValues(parameterAccessor);
-		if (parameters instanceof JsonArray) {
-			this.setPositionalParameters((JsonArray) parameters);
+		if (parameters instanceof JsonArray jsonArray) {
+			this.setPositionalParameters(jsonArray);
 		} else {
 			this.setNamedParameters((JsonObject) parameters);
 		}
@@ -93,8 +93,8 @@ public class StringQuery extends Query {
 		// the inlineN1ql left off.
 		int[] paramIndexPtr = null;
 		JsonValue params = this.getParameters();
-		if (params instanceof JsonArray) { // positional parameters
-			paramIndexPtr = new int[] { ((JsonArray) params).size() };
+		if (params instanceof JsonArray jsonArray) { // positional parameters
+			paramIndexPtr = new int[] { jsonArray.size() };
 		} else { // named parameters or no parameters, no index required
 			paramIndexPtr = new int[] { -1 };
 		}
