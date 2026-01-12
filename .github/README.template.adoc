@@ -1,0 +1,123 @@
+= Spring Data Couchbase image:https://jenkins.spring.io/buildStatus/icon?job=spring-data-couchbase%2Fmain&subject=Build[link=https://jenkins.spring.io/view/SpringData/job/spring-data-couchbase/] https://gitter.im/spring-projects/spring-data[image:https://badges.gitter.im/spring-projects/spring-data.svg[Gitter]] image:https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A["Revved up by Develocity", link="https://ge.spring.io/scans?search.rootProjectNames=Spring Data Couchbase"]
+
+The primary goal of the https://www.springsource.org/spring-data[Spring Data] project is to make it easier to build
+Spring-powered applications that use new data access technologies such as non-relational databases, map-reduce
+frameworks, and cloud based data services.
+
+The Spring Data Couchbase project aims to provide a familiar and consistent Spring-based programming model for Couchbase
+Server as a document database and cache while retaining store-specific features and capabilities. Key functional areas
+of Spring Data Couchbase are a POJO centric model for interacting with a Couchbase Server Bucket and easily writing a
+repository style data access layer.
+
+Integration tests require a couchbase server with a bucket name "protected" with "password" as the password set.
+If the server allows users, then an user with username "protected" with "password" as the password should also be set.
+The recommended way to run tests is to install docker and use container in server.properties.
+
+This project is lead and maintained by Couchbase, Inc.
+
+== Features
+
+* Spring configuration support using Java based `@Configuration` classes or an XML namespace for the Couchbase driver (Java SDK version 2.x).
+* `CouchbaseTemplate` helper class that increases productivity performing common Couchbase operations. Includes integrated object mapping between documents and POJOs.
+* Exception translation into Spring’s portable Data Access Exception hierarchy.
+* Feature Rich Object Mapping integrated with Spring’s Conversion Service.
+* Annotation based mapping metadata but extensible to support other metadata formats.
+* Automatic implementation of `Repository` interfaces including support for custom finder methods (backed by Couchbase’s query language, `N1QL`) and `PagingAndSortingRepository`.
+* For Couchbase server versions < 4.0, repositories can still be backed by Couchbase Views.
+* Support for geospatial and multidimensional querying (backed by Couchbase Spatial Views)
+* JMX administration and monitoring
+* Can serve as the backend for `@Cacheable` support, to cache any objects you need for high performance access (see sibling Spring Cache project in Couchbase’s github, https://github.com/couchbaselabs/couchbase-spring-cache[couchbaselabs/couchbase-spring-cache]).
+
+== Version compatibility
+
+`Spring-Data Couchbase` is the Spring Data connector for the `Couchbase Java SDK 2.x` generation.
+
+Both the SDK and this Spring Data community project are major version changes with lots of differences from their respective previous versions.
+
+Notably, this version is compatible with `Couchbase Server 4.0`, bringing support for the `N1QL` query language.
+
+include::https://raw.githubusercontent.com/spring-projects/spring-data-build/refs/heads/main/etc/readme/code-of-conduct.adoc[]
+
+== Getting Started
+
+Here is a quick teaser of an application using Spring Data Repositories in Java:
+
+[source,java]
+----
+public interface PersonRepository extends CrudRepository<Person, Long> {
+
+  List<Person> findByLastname(String lastname);
+
+  List<Person> findByFirstnameLike(String firstname);
+}
+
+@Service
+public class MyService {
+
+  private final PersonRepository repository;
+
+  public MyService(PersonRepository repository) {
+    this.repository = repository;
+  }
+
+  public void doWork() {
+
+    repository.deleteAll();
+
+    Person person = new Person();
+    person.setFirstname("Couch");
+    person.setLastname("Base");
+    repository.save(person);
+
+    List<Person> lastNameResults = repository.findByLastname("Base");
+    List<Person> firstNameResults = repository.findByFirstnameLike("Cou*");
+ }
+}
+
+@Configuration
+@EnableCouchbaseRepositories
+public class Config extends AbstractCouchbaseConfiguration {
+
+	@Override
+	protected List<String> getBootstrapHosts() {
+		return Arrays.asList("host1", "host2");
+	}
+
+	@Override
+	protected String getBucketName() {
+		return "default";
+	}
+
+	@Override
+	protected String getPassword() {
+		return "";
+	}
+}
+----
+
+include::https://raw.githubusercontent.com/spring-projects/spring-data-build/refs/heads/main/etc/readme/dependencies.adoc[]
+
+include::https://raw.githubusercontent.com/spring-projects/spring-data-build/refs/heads/main/etc/readme/getting-help.adoc[]
+
+=== Building and staging reference documentation for review
+
+[source,bash]
+----
+  export MY_GIT_USER=<github-user>
+  mvn generate-resources
+  docs=`pwd`/target/site/reference/html
+  pushd /tmp
+  mkdir $$
+  cd $$
+  # see https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
+  # this examples uses a repository named "staged"
+  git clone git@github.com:${MY_GIT_USER}/staged.git -b gh-pages
+  cd staged
+  cp -R $docs/* .
+  git add .
+  git commit --message "stage for review"
+  git push origin gh-pages
+  popd
+----
+
+include::https://raw.githubusercontent.com/spring-projects/spring-data-build/refs/heads/main/etc/readme/license.adoc[]
