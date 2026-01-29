@@ -86,8 +86,8 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 		if (entity.isAnnotationPresent(Document.class)) {
 
 			for (IndexDefinition indexDefinition : indexResolver.resolveIndexFor(entity.getTypeInformation())) {
-				IndexDefinitionHolder indexToCreate = indexDefinition instanceof IndexDefinitionHolder
-						? (IndexDefinitionHolder) indexDefinition
+				IndexDefinitionHolder indexToCreate = indexDefinition instanceof IndexDefinitionHolder indexDefinitionHolder
+						? indexDefinitionHolder
 						: new IndexDefinitionHolder(indexDefinition.getIndexFields(), indexDefinition.getIndexName(),
 								indexDefinition.getIndexPredicate());
 

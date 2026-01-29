@@ -126,11 +126,11 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
 			return new DataRetrievalFailureException(ex.getMessage(), ex);
 		}
 
-		if (ex instanceof TransactionOperationFailedException) {
+		if (ex instanceof TransactionOperationFailedException transactionOperationFailedException) {
 			// Replace the TransactionOperationFailedException, since we want the Spring operation to fail with a
 			// Spring error. Internal state has already been set in the AttemptContext so the retry, rollback etc.
 			// will get respected regardless of what gets propagated (or not) from the lambda.
-			return new UncategorizedTransactionDataAccessException((TransactionOperationFailedException) ex);
+			return new UncategorizedTransactionDataAccessException(transactionOperationFailedException);
 		}
 
 		// Unable to translate exception, therefore just throw the original!

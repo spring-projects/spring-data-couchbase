@@ -100,12 +100,12 @@ public final class DateConverters {
 			if (source == null) {
 				return null;
 			}
-			if (source instanceof Number) {
+			if (source instanceof Number number) {
 				Date date = new Date();
-				date.setTime(((Number) source).longValue());
+				date.setTime(number.longValue());
 				return date;
-			} else if (source instanceof String) {
-				return Date.from(Instant.parse((String) source).atZone(systemDefault()).toInstant());
+			} else if (source instanceof String str) {
+				return Date.from(Instant.parse(str).atZone(systemDefault()).toInstant());
 			} else {
 				// Unsupported serialized object
 				return null;

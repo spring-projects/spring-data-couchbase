@@ -89,8 +89,8 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 							result.expiryTime().orElse(null), returnType, pArgs.getScope(), pArgs.getCollection(), null,
 							null))
 					.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+						if (throwable instanceof RuntimeException e) {
+							return template.potentiallyConvertRuntimeException(e);
 						} else {
 							return throwable;
 						}
