@@ -32,7 +32,6 @@ import org.springframework.util.Assert;
 
 import com.couchbase.client.core.cnc.CbTracing;
 import com.couchbase.client.core.cnc.RequestSpan;
-import com.couchbase.client.core.cnc.TracingIdentifiers;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
@@ -45,6 +44,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
 /**
  * {@link ReactiveRemoveByIdOperation} implementations for Couchbase.
  *
+ * @author Emilien Bevierre
  * @author Michael Reiche
  * @author Tigran Babloyan
  */
@@ -125,7 +125,6 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 						}
 						CoreTransactionAttemptContext internal = ctx;
 						RequestSpan span = CbTracing.newSpan(internal.core().context(), TRANSACTION_OP_REMOVE, internal.span());
-						span.attribute(TracingIdentifiers.ATTR_OPERATION, TRANSACTION_OP_REMOVE);
 						return ctx.remove(getResult, new SpanWrapper(span)).map(r -> new RemoveResult(id.toString(), 0, null));
 					});
 

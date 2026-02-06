@@ -33,7 +33,6 @@ import org.springframework.util.Assert;
 
 import com.couchbase.client.core.cnc.CbTracing;
 import com.couchbase.client.core.cnc.RequestSpan;
-import com.couchbase.client.core.cnc.TracingIdentifiers;
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
@@ -47,6 +46,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
 /**
  * {@link ReactiveReplaceByIdOperation} implementations for Couchbase.
  *
+ * @author Emilien Bevierre
  * @author Michael Reiche
  * @author Tigran Babloyan
  */
@@ -134,7 +134,6 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 										CoreTransactionAttemptContext internal = ctxOpt.get().getCore();
 										RequestSpan span = CbTracing.newSpan(internal.core().context(), TRANSACTION_OP_REPLACE,
 												internal.span());
-										span.attribute(TracingIdentifiers.ATTR_OPERATION, TRANSACTION_OP_REPLACE);
 										return ctx.replace(getResult, template.getCouchbaseClientFactory().getCluster().environment()
 												.transcoder().encode(converted.export()).encoded(), new SpanWrapper(span));
 									}).flatMap(
