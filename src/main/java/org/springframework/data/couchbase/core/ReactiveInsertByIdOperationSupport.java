@@ -43,6 +43,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
 /**
  * {@link ReactiveInsertByIdOperation} implementations for Couchbase.
  *
+ * @author Emilien Bevierre
  * @author Michael Reiche
  * @author Tigran Babloyan
  */
