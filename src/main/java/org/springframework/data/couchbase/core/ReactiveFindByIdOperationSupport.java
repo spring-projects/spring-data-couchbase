@@ -142,8 +142,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 				}
 				return Mono.error(throwable);
 			}).onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				if (throwable instanceof RuntimeException e) {
+					return template.potentiallyConvertRuntimeException(e);
 				} else {
 					return throwable;
 				}

@@ -162,8 +162,8 @@ public class N1QLExpression {
 		StringBuilder path = new StringBuilder();
 		for (Object p : pathComponents) {
 			path.append('.');
-			if (p instanceof N1QLExpression) {
-				path.append(((N1QLExpression) p).toString());
+			if (p instanceof N1QLExpression n1QLExpression) {
+				path.append(n1QLExpression.toString());
 			} else {
 				path.append(String.valueOf(p));
 			}

@@ -119,8 +119,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 				}
 				return TransactionalSupport.verifyNotInTransaction("findByAnalytics").then(template.getCouchbaseClientFactory()
 						.getCluster().reactive().analyticsQuery(statement, buildAnalyticsOptions())).onErrorMap(throwable -> {
-							if (throwable instanceof RuntimeException) {
-								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+							if (throwable instanceof RuntimeException e) {
+								return template.potentiallyConvertRuntimeException(e);
 							} else {
 								return throwable;
 							}
@@ -154,8 +154,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 				}
 				return TransactionalSupport.verifyNotInTransaction("findByAnalytics").then(template.getCouchbaseClientFactory()
 						.getCluster().reactive().analyticsQuery(statement, buildAnalyticsOptions())).onErrorMap(throwable -> {
-							if (throwable instanceof RuntimeException) {
-								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+							if (throwable instanceof RuntimeException e) {
+								return template.potentiallyConvertRuntimeException(e);
 							} else {
 								return throwable;
 							}

@@ -124,8 +124,8 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 													null, null));
 								}
 							})).onErrorMap(throwable -> {
-								if (throwable instanceof RuntimeException) {
-									return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+								if (throwable instanceof RuntimeException e) {
+									return template.potentiallyConvertRuntimeException(e);
 								} else {
 									return throwable;
 								}
