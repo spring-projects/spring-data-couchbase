@@ -1184,10 +1184,12 @@ public class MappingCouchbaseConverterTests {
 			@IdSuffix(order = 1) public String suffix = "222";
 		}
 		Entity entity = new Entity();
+		entity.id = entity.prefix + '.' + entity.prefix1 + '.' + entity.someId + '.' + entity.suffix + '.' + entity.suffix1;
 		CouchbaseDocument converted = new CouchbaseDocument();
 		converter.write(entity, converted);
 		assertThat(converted.getId()).isEqualTo(entity.id);
-		assertThat(converted.getId()).isEqualTo(entity.prefix1 + '.' + entity.someId + '.' + entity.suffix);
+		assertThat(converted.getId()).isEqualTo(
+				entity.prefix + '.' + entity.prefix1 + '.' + entity.someId + '.' + entity.suffix + '.' + entity.suffix1);
 	}
 
 	@Test
