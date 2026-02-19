@@ -128,8 +128,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 */
 	@Override
 	public final CouchbaseStorable decode(final String source, final CouchbaseStorable target) {
-		try {
-			JsonParser parser = factory.createParser(source);
+		try (JsonParser parser = factory.createParser(source)) {
 			return decodeWithParser(parser, target);
 		} catch (IOException ex) {
 			throw new RuntimeException("Could not decode JSON", ex);
@@ -146,8 +145,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 */
 	@Override
 	public final CouchbaseStorable decode(final byte[] source, final CouchbaseStorable target) {
-		try {
-			JsonParser parser = factory.createParser(source);
+		try (JsonParser parser = factory.createParser(source)) {
 			return decodeWithParser(parser, target);
 		} catch (IOException ex) {
 			throw new RuntimeException("Could not decode JSON", ex);
@@ -155,20 +153,16 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	}
 
 	private CouchbaseStorable decodeWithParser(final JsonParser parser, final CouchbaseStorable target) throws IOException {
-		try {
-			while (parser.nextToken() != null) {
-				JsonToken currentToken = parser.getCurrentToken();
+		while (parser.nextToken() != null) {
+			JsonToken currentToken = parser.getCurrentToken();
 
-				if (currentToken == JsonToken.START_OBJECT) {
-					return decodeObject(parser, (CouchbaseDocument) target);
-				} else if (currentToken == JsonToken.START_ARRAY) {
-					return decodeArray(parser, new CouchbaseList());
-				} else {
-					throw new MappingException("JSON to decode needs to start as array or object!");
-				}
+			if (currentToken == JsonToken.START_OBJECT) {
+				return decodeObject(parser, (CouchbaseDocument) target);
+			} else if (currentToken == JsonToken.START_ARRAY) {
+				return decodeArray(parser, new CouchbaseList());
+			} else {
+				throw new MappingException("JSON to decode needs to start as array or object!");
 			}
-		} finally {
-			parser.close();
 		}
 		return target;
 	}

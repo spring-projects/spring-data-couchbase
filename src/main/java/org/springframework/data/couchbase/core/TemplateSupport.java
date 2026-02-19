@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
@@ -32,8 +33,11 @@ public interface TemplateSupport {
 	<T> T decodeEntity(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass, String scope,
 			String collection, Object txResultHolder, CouchbaseResourceHolder holder);
 
-	<T> T decodeEntity(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass, String scope,
-			String collection, Object txResultHolder, CouchbaseResourceHolder holder);
+	default <T> T decodeEntity(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass, String scope,
+			String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		return decodeEntity(id, new String(source, StandardCharsets.UTF_8), cas, expiryTime, entityClass, scope,
+				collection, txResultHolder, holder);
+	}
 
 	<T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas, Object txResultHolder,
 			CouchbaseResourceHolder holder);

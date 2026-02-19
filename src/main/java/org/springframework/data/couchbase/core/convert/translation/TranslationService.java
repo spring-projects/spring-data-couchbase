@@ -48,7 +48,8 @@ public interface TranslationService {
 
 	/**
 	 * Decodes the target format from a byte array into a {@link CouchbaseDocument}.
-	 * This avoids the intermediate String allocation when the source is already available as bytes.
+	 * The default implementation converts the bytes to a String via UTF-8 before decoding.
+	 * Implementations may override this to parse bytes directly and avoid the intermediate String allocation.
 	 *
 	 * @param source the source formatted document as bytes (UTF-8 encoded).
 	 * @param target the target of the populated data.
