@@ -5,6 +5,9 @@ target/
 .project
 .settings
 
+# Local test configuration (credentials, local server settings)
+src/test/resources/integration.local.properties
+
 *.iml
 .idea
 

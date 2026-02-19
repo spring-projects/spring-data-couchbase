@@ -22,7 +22,7 @@ import static com.couchbase.client.java.transactions.internal.ConverterUtil.make
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
+
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,6 +46,7 @@ import com.couchbase.client.java.kv.GetOptions;
 /**
  * {@link ReactiveFindByIdOperation} implementations for Couchbase.
  *
+ * @author Emilien Bevierre
  * @author Michael Reiche
  * @author Tigran Babloyan
  */
@@ -111,26 +112,26 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 						return rc
 								.getAndTouch(id.toString(), expiryToUse,
 										buildOptions((GetAndTouchOptions) pArgs.getOptions()))
-								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class),
+								.flatMap(result -> support.decodeEntity(id, result.contentAsBytes(),
 										result.cas(), result.expiryTime().orElse(null), domainType, pArgs.getScope(),
 										pArgs.getCollection(), null, null));
 					} else if (pArgs.getOptions() instanceof GetAndLockOptions options) {
 						return rc
 								.getAndLock(id.toString(), Optional.of(lockDuration).orElse(Duration.ZERO),
 										buildOptions((GetAndLockOptions) pArgs.getOptions()))
-								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class),
+								.flatMap(result -> support.decodeEntity(id, result.contentAsBytes(),
 										result.cas(), result.expiryTime().orElse(null), domainType, pArgs.getScope(),
 										pArgs.getCollection(), null, null));
 					} else {
 						return rc.get(id.toString(), buildOptions((GetOptions) pArgs.getOptions()))
-								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class),
+								.flatMap(result -> support.decodeEntity(id, result.contentAsBytes(),
 										result.cas(), result.expiryTime().orElse(null), domainType,
 										pArgs.getScope(), pArgs.getCollection(), null, null));
 					}
 				} else {
 					rejectInvalidTransactionalOptions();
 					return ctxOpt.get().getCore().get(makeCollectionIdentifier(rc.async()), id.toString())
-							.flatMap(result -> support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8),
+							.flatMap(result -> support.decodeEntity(id, result.contentAsBytes(),
 									result.cas(), null, domainType, pArgs.getScope(), pArgs.getCollection(), null,
 									null));
 				}

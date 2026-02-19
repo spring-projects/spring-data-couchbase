@@ -46,6 +46,7 @@ import com.couchbase.client.core.error.CouchbaseException;
 /**
  * Base shared by Reactive and non-Reactive TemplateSupport
  *
+ * @author Emilien Bevierre
  * @author Michael Reiche
  */
 @Stability.Internal
@@ -70,7 +71,37 @@ public abstract class AbstractTemplateSupport {
 
 	public <T> T decodeEntityBase(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass,
 			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(entityClass);
 
+		if (persistentEntity == null) {
+			final CouchbaseDocument converted = new CouchbaseDocument(id);
+			Set<Map.Entry<String, Object>> set = ((CouchbaseDocument) translationService.decode(source, converted))
+					.getContent().entrySet();
+			return (T) set.iterator().next().getValue();
+		}
+
+		final CouchbaseDocument converted = prepareConvertedDocument(id, cas, persistentEntity);
+		T readEntity = converter.read(entityClass, (CouchbaseDocument) translationService.decode(source, converted));
+		return finalizeEntity(readEntity, id, cas, expiryTime, scope, collection, txResultHolder, holder);
+	}
+
+	public <T> T decodeEntityBase(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass,
+			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(entityClass);
+
+		if (persistentEntity == null) {
+			final CouchbaseDocument converted = new CouchbaseDocument(id);
+			Set<Map.Entry<String, Object>> set = ((CouchbaseDocument) translationService.decode(source, converted))
+					.getContent().entrySet();
+			return (T) set.iterator().next().getValue();
+		}
+
+		final CouchbaseDocument converted = prepareConvertedDocument(id, cas, persistentEntity);
+		T readEntity = converter.read(entityClass, (CouchbaseDocument) translationService.decode(source, converted));
+		return finalizeEntity(readEntity, id, cas, expiryTime, scope, collection, txResultHolder, holder);
+	}
+
+	private CouchbaseDocument prepareConvertedDocument(Object id, Long cas, CouchbasePersistentEntity persistentEntity) {
 		// this is the entity class defined for the repository. It may not be the class of the document that was read
 		// we will reset it after reading the document
 		//
@@ -81,19 +112,6 @@ public abstract class AbstractTemplateSupport {
 		// We could expose from the MappingCouchbaseConverter determining the persistent entity from the source,
 		// but that is a lot of work to do every time just for this very rare and avoidable case.
 		// TypeInformation<? extends R> typeToUse = typeMapper.readType(source, type);
-
-		CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(entityClass);
-
-		if (persistentEntity == null) { // method could return a Long, Boolean, String etc.
-			// QueryExecutionConverters.unwrapWrapperTypes will recursively unwrap until there is nothing left
-			// to unwrap. This results in List<String[]> being unwrapped past String[] to String, so this may also be a
-			// Collection (or Array) of entityClass. We have no way of knowing - so just assume it is what we are told.
-			// if this is a Collection or array, only the first element will be returned.
-			final CouchbaseDocument converted = new CouchbaseDocument(id);
-			Set<Map.Entry<String, Object>> set = ((CouchbaseDocument) translationService.decode(source, converted))
-					.getContent().entrySet();
-			return (T) set.iterator().next().getValue();
-		}
 
 		if (id == null) {
 			throw new CouchbaseException(TemplateUtils.SELECT_ID + " was null. Either use #{#n1ql.selectEntity} or project "
@@ -117,14 +135,18 @@ public abstract class AbstractTemplateSupport {
 			}
 		}
 
+		return converted;
+	}
+
+	private <T> T finalizeEntity(T readEntity, Object id, Long cas, Instant expiryTime, String scope, String collection,
+			Object txResultHolder, CouchbaseResourceHolder holder) {
+		final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
+
+		CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(readEntity.getClass());
+
 		// if the constructor has an argument that is long version, then construction will fail if the 'version'
 		// is not available as 'null' is not a legal value for a long. Changing the arg to "Long version" would solve this.
 		// (Version doesn't come from 'source', it comes from the cas argument to decodeEntity)
-		T readEntity = converter.read(entityClass, (CouchbaseDocument) translationService.decode(source, converted));
-		final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
-
-		persistentEntity = couldBePersistentEntity(readEntity.getClass());
-
 		if (cas != null && cas != 0 && persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 		}

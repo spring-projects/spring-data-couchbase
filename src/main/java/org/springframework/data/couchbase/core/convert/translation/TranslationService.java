@@ -16,12 +16,15 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 
 /**
  * Defines a translation service to encode/decode responses into the {@link CouchbaseStorable} format.
  *
+ * @author Emilien Bevierre
  * @author Michael Nitschinger
  */
 public interface TranslationService {
@@ -42,6 +45,18 @@ public interface TranslationService {
 	 * @return a properly populated document to work with.
 	 */
 	CouchbaseStorable decode(String source, CouchbaseStorable target);
+
+	/**
+	 * Decodes the target format from a byte array into a {@link CouchbaseDocument}.
+	 * This avoids the intermediate String allocation when the source is already available as bytes.
+	 *
+	 * @param source the source formatted document as bytes (UTF-8 encoded).
+	 * @param target the target of the populated data.
+	 * @return a properly populated document to work with.
+	 */
+	default CouchbaseStorable decode(byte[] source, CouchbaseStorable target) {
+		return decode(new String(source, StandardCharsets.UTF_8), target);
+	}
 
 	/**
 	 * Decodes an ad-hoc JSON object into a corresponding "case" class.

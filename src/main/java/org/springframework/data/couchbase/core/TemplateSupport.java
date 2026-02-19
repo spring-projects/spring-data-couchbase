@@ -22,6 +22,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 
 /**
+ * @author Emilien Bevierre
  * @author Michael Reiche
  */
 public interface TemplateSupport {
@@ -29,6 +30,9 @@ public interface TemplateSupport {
 	CouchbaseDocument encodeEntity(Object entityToEncode);
 
 	<T> T decodeEntity(Object id, String source, Long cas, Instant expiryTIme, Class<T> entityClass, String scope,
+			String collection, Object txResultHolder, CouchbaseResourceHolder holder);
+
+	<T> T decodeEntity(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass, String scope,
 			String collection, Object txResultHolder, CouchbaseResourceHolder holder);
 
 	<T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas, Object txResultHolder,

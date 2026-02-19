@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * A Jackson JSON Translator that implements the {@link TranslationService} contract.
  *
+ * @author Emilien Bevierre
  * @author Michael Nitschinger
  * @author Simon Baslé
  * @author Anastasiia Smirnova
@@ -128,7 +129,33 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	@Override
 	public final CouchbaseStorable decode(final String source, final CouchbaseStorable target) {
 		try {
-			JsonParser parser = factory.createParser((String) source);
+			JsonParser parser = factory.createParser(source);
+			return decodeWithParser(parser, target);
+		} catch (IOException ex) {
+			throw new RuntimeException("Could not decode JSON", ex);
+		}
+	}
+
+	/**
+	 * Decode a JSON byte array into the {@link CouchbaseStorable} structure.
+	 * This avoids the intermediate String allocation by parsing directly from bytes.
+	 *
+	 * @param source the source formatted document as bytes (UTF-8 encoded).
+	 * @param target the target of the populated data.
+	 * @return the decoded structure.
+	 */
+	@Override
+	public final CouchbaseStorable decode(final byte[] source, final CouchbaseStorable target) {
+		try {
+			JsonParser parser = factory.createParser(source);
+			return decodeWithParser(parser, target);
+		} catch (IOException ex) {
+			throw new RuntimeException("Could not decode JSON", ex);
+		}
+	}
+
+	private CouchbaseStorable decodeWithParser(final JsonParser parser, final CouchbaseStorable target) throws IOException {
+		try {
 			while (parser.nextToken() != null) {
 				JsonToken currentToken = parser.getCurrentToken();
 
@@ -140,9 +167,8 @@ public class JacksonTranslationService implements TranslationService, Initializi
 					throw new MappingException("JSON to decode needs to start as array or object!");
 				}
 			}
+		} finally {
 			parser.close();
-		} catch (IOException ex) {
-			throw new RuntimeException("Could not decode JSON", ex);
 		}
 		return target;
 	}

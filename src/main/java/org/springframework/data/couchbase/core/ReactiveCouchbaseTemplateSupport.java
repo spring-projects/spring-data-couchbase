@@ -38,6 +38,7 @@ import org.springframework.util.Assert;
 /**
  * Internal encode/decode support for {@link ReactiveCouchbaseTemplate}.
  *
+ * @author Emilien Bevierre
  * @author Carlos Espinaco
  * @author Michael Reiche
  * @since 4.2
@@ -72,6 +73,14 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 
 	@Override
 	public <T> Mono<T> decodeEntity(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass,
+			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		return Mono
+				.fromSupplier(() -> decodeEntityBase(id, source, cas, expiryTime, entityClass, scope, collection,
+						txResultHolder, holder));
+	}
+
+	@Override
+	public <T> Mono<T> decodeEntity(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass,
 			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
 		return Mono
 				.fromSupplier(() -> decodeEntityBase(id, source, cas, expiryTime, entityClass, scope, collection,

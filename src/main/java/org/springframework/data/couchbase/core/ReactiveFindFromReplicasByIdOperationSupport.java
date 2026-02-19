@@ -27,12 +27,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 
-import com.couchbase.client.java.codec.RawJsonTranscoder;
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
 
 /**
  * {@link ReactiveFindFromReplicasByIdOperation} implementations for Couchbase.
  *
+ * @author Emilien Bevierre
  * @author Michael Reiche
  */
 public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFindFromReplicasByIdOperation {
@@ -75,9 +75,6 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 		@Override
 		public Mono<T> any(final String id) {
 			GetAnyReplicaOptions garOptions = options != null ? options : getAnyReplicaOptions();
-			if (garOptions.build().transcoder() == null) {
-				garOptions.transcoder(RawJsonTranscoder.INSTANCE);
-			}
 			PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions, domainType);
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("getAnyReplica key={} {}", id, pArgs);
@@ -85,7 +82,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 			return TransactionalSupport.verifyNotInTransaction("findFromReplicasById").then(Mono.just(id))
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))
-					.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(),
+					.flatMap(result -> support.decodeEntity(id, result.contentAsBytes(), result.cas(),
 							result.expiryTime().orElse(null), returnType, pArgs.getScope(), pArgs.getCollection(), null,
 							null))
 					.onErrorMap(throwable -> {
