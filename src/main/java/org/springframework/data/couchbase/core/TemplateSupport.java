@@ -29,7 +29,7 @@ public interface TemplateSupport {
 
 	CouchbaseDocument encodeEntity(Object entityToEncode);
 
-	<T> T decodeEntity(Object id, String source, Long cas, Instant expiryTIme, Class<T> entityClass, String scope,
+	<T> T decodeEntity(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass, String scope,
 			String collection, Object txResultHolder, CouchbaseResourceHolder holder);
 
 	<T> T decodeEntity(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass, String scope,
