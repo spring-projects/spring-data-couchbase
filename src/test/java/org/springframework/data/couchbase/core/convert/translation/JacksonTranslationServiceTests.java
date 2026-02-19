@@ -27,6 +27,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 /**
  * Verifies the functionality of a {@link JacksonTranslationService}.
  *
+ * @author Emilien Bevierre
  * @author Michael Nitschinger
  */
 public class JacksonTranslationServiceTests {
