@@ -17,8 +17,6 @@ package org.springframework.data.couchbase.core;
 
 import reactor.core.publisher.Flux;
 
-import java.nio.charset.StandardCharsets;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
@@ -30,6 +28,12 @@ import com.couchbase.client.java.kv.ScanOptions;
 import com.couchbase.client.java.kv.ScanTerm;
 import com.couchbase.client.java.kv.ScanType;
 
+/**
+ * {@link ReactiveRangeScanOperationSupport} implementations for Couchbase.
+ *
+ * @author Emilien Bevierre
+ * @author Michael Reiche
+ */
 public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOperation {
 
 	private final ReactiveCouchbaseTemplate template;
@@ -162,7 +166,7 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 			Flux<T> reactiveEntities = TransactionalSupport.verifyNotInTransaction("rangeScan")
 					.thenMany(rc.scan(scanType, buildScanOptions(pArgs.getOptions(), false))
 							.flatMap(result -> support.decodeEntity(result.id(),
-									new String(result.contentAsBytes(), StandardCharsets.UTF_8), result.cas(),
+									result.contentAsBytes(), result.cas(),
 									result.expiryTime().orElse(null), domainType, pArgs.getScope(),
 									pArgs.getCollection(), null, null)));
 

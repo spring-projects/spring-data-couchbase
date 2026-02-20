@@ -26,6 +26,7 @@ import java.time.Instant;
 /**
  * Wrapper of {@link TemplateSupport} methods to adapt them to {@link ReactiveTemplateSupport}.
  *
+ * @author Emilien Bevierre
  * @author Carlos Espinaco
  * @author Michael Reiche
  * @since 4.2
@@ -45,6 +46,13 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 
 	@Override
 	public <T> Mono<T> decodeEntity(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass,
+			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, expiryTime, entityClass, scope, collection,
+				txResultHolder, holder));
+	}
+
+	@Override
+	public <T> Mono<T> decodeEntity(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass,
 			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
 		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, expiryTime, entityClass, scope, collection,
 				txResultHolder, holder));

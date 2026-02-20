@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.core.convert.translation;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.nio.charset.StandardCharsets;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
@@ -25,6 +27,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 /**
  * Verifies the functionality of a {@link JacksonTranslationService}.
  *
+ * @author Emilien Bevierre
  * @author Michael Nitschinger
  */
 public class JacksonTranslationServiceTests {
@@ -59,6 +62,40 @@ public class JacksonTranslationServiceTests {
 		LanguageFragment f = service.decodeFragment(source, LanguageFragment.class);
 		assertNotNull(f);
 		assertEquals("french", f.language);
+	}
+
+	@Test
+	void shouldDecodeFromBytes() {
+		String source = "{\"language\":\"english\",\"count\":42}";
+		byte[] bytes = source.getBytes(StandardCharsets.UTF_8);
+
+		CouchbaseDocument targetFromString = new CouchbaseDocument();
+		service.decode(source, targetFromString);
+
+		CouchbaseDocument targetFromBytes = new CouchbaseDocument();
+		service.decode(bytes, targetFromBytes);
+
+		assertEquals(targetFromString.get("language"), targetFromBytes.get("language"));
+		assertEquals(targetFromString.get("count"), targetFromBytes.get("count"));
+		assertEquals("english", targetFromBytes.get("language"));
+		assertEquals(42, targetFromBytes.get("count"));
+	}
+
+	@Test
+	void shouldDecodeNonASCIIFromBytes() {
+		String source = "{\"language\":\"русский\",\"greeting\":\"Привет мир\"}";
+		byte[] bytes = source.getBytes(StandardCharsets.UTF_8);
+
+		CouchbaseDocument targetFromString = new CouchbaseDocument();
+		service.decode(source, targetFromString);
+
+		CouchbaseDocument targetFromBytes = new CouchbaseDocument();
+		service.decode(bytes, targetFromBytes);
+
+		assertEquals(targetFromString.get("language"), targetFromBytes.get("language"));
+		assertEquals(targetFromString.get("greeting"), targetFromBytes.get("greeting"));
+		assertEquals("русский", targetFromBytes.get("language"));
+		assertEquals("Привет мир", targetFromBytes.get("greeting"));
 	}
 
 	static class LanguageFragment {

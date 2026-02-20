@@ -35,6 +35,7 @@ import java.time.Instant;
 /**
  * Internal encode/decode support for CouchbaseTemplate.
  *
+ * @author Emilien Bevierre
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
@@ -65,6 +66,12 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 
 	@Override
 	public <T> T decodeEntity(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass,
+			String scope, String collection, Object txHolder, CouchbaseResourceHolder holder) {
+		return decodeEntityBase(id, source, cas, expiryTime, entityClass, scope, collection, txHolder, holder);
+	}
+
+	@Override
+	public <T> T decodeEntity(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass,
 			String scope, String collection, Object txHolder, CouchbaseResourceHolder holder) {
 		return decodeEntityBase(id, source, cas, expiryTime, entityClass, scope, collection, txHolder, holder);
 	}
