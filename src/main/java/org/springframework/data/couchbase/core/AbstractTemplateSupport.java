@@ -46,8 +46,8 @@ import com.couchbase.client.core.error.CouchbaseException;
 /**
  * Base shared by Reactive and non-Reactive TemplateSupport
  *
- * @author Emilien Bevierre
  * @author Michael Reiche
+ * @author Emilien Bevierre
  */
 @Stability.Internal
 public abstract class AbstractTemplateSupport {

@@ -21,7 +21,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
+import org.springframework.data.couchbase.core.util.ByteUtils;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -54,7 +54,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public final class OtherConverters {
 
-	private OtherConverters() {}
+	private OtherConverters() {
+	}
 
 	/**
 	 * Returns all converters by this class that can be registered.
@@ -82,9 +83,11 @@ public final class OtherConverters {
 		converters.add(CouchbaseListToJsonArray.INSTANCE);
 		converters.add(YearMonthToStringConverter.INSTANCE);
 		converters.add(StringToYearMonthConverter.INSTANCE);
-		// EnumToObject, IntegerToEnumConverterFactory and StringToEnumConverterFactory are
+		// EnumToObject, IntegerToEnumConverterFactory and StringToEnumConverterFactory
+		// are
 		// registered in
-		// {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(
+		// {@link
+		// org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(
 		// CryptoManager)} as they require an ObjectMapper
 		return converters;
 	}
@@ -109,7 +112,8 @@ public final class OtherConverters {
 		}
 	}
 
-	// to support reading BigIntegers that were written as Strings (now discontinued)
+	// to support reading BigIntegers that were written as Strings (now
+	// discontinued)
 	@ReadingConverter
 	public enum StringToBigInteger implements Converter<String, BigInteger> {
 		INSTANCE;
@@ -120,7 +124,8 @@ public final class OtherConverters {
 		}
 	}
 
-	// to support reading BigDecimals that were written as Strings (now discontinued)
+	// to support reading BigDecimals that were written as Strings (now
+	// discontinued)
 	@ReadingConverter
 	public enum StringToBigDecimal implements Converter<String, BigDecimal> {
 		INSTANCE;
@@ -147,7 +152,7 @@ public final class OtherConverters {
 
 		@Override
 		public byte[] convert(String source) {
-			return source == null ? null : Base64.getDecoder().decode(source.getBytes(StandardCharsets.UTF_8));
+			return source == null ? null : Base64.getDecoder().decode(ByteUtils.getBytes(source));
 		}
 	}
 
@@ -198,7 +203,8 @@ public final class OtherConverters {
 	/**
 	 * Writing converter for Enums. This is registered in
 	 * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions( CryptoManager, ObjectMapper)}.
-	 * The corresponding reading converters are in {@link IntegerToEnumConverterFactory} and
+	 * The corresponding reading converters are in
+	 * {@link IntegerToEnumConverterFactory} and
 	 * {@link StringToEnumConverterFactory}
 	 */
 
@@ -232,24 +238,29 @@ public final class OtherConverters {
 	@WritingConverter
 	public enum JsonNodeToMap implements Converter<JsonNode, CouchbaseDocument> {
 		INSTANCE;
-		static ObjectMapper mapper= new ObjectMapper().registerModule(new JsonValueModule());
+
+		static ObjectMapper mapper = new ObjectMapper().registerModule(new JsonValueModule());
+
 		@Override
 		public CouchbaseDocument convert(JsonNode source) {
-			if( source == null ){
+			if (source == null) {
 				return null;
 			}
-			return new CouchbaseDocument().setContent((Map)mapper.convertValue(source, new TypeReference<Map<String, Object>>(){}));
+			return new CouchbaseDocument()
+					.setContent((Map) mapper.convertValue(source, new TypeReference<Map<String, Object>>() {
+					}));
 		}
 	}
 
 	@ReadingConverter
 	public enum MapToJsonNode implements Converter<CouchbaseDocument, JsonNode> {
 		INSTANCE;
-		static ObjectMapper mapper= new ObjectMapper().registerModule(new JsonValueModule());
+
+		static ObjectMapper mapper = new ObjectMapper().registerModule(new JsonValueModule());
 
 		@Override
 		public JsonNode convert(CouchbaseDocument source) {
-			if( source == null ){
+			if (source == null) {
 				return null;
 			}
 			return mapper.valueToTree(source.export());
@@ -262,7 +273,7 @@ public final class OtherConverters {
 
 		@Override
 		public CouchbaseDocument convert(JsonObject source) {
-			if( source == null ){
+			if (source == null) {
 				return null;
 			}
 			return new CouchbaseDocument().setContent(source);
@@ -272,11 +283,12 @@ public final class OtherConverters {
 	@ReadingConverter
 	public enum MapToJsonObject implements Converter<CouchbaseDocument, JsonObject> {
 		INSTANCE;
-		static ObjectMapper mapper= new ObjectMapper();
+
+		static ObjectMapper mapper = new ObjectMapper();
 
 		@Override
 		public JsonObject convert(CouchbaseDocument source) {
-			if( source == null ){
+			if (source == null) {
 				return null;
 			}
 			return JsonObject.from(source.export());
@@ -289,7 +301,7 @@ public final class OtherConverters {
 
 		@Override
 		public CouchbaseList convert(JsonArray source) {
-			if( source == null ){
+			if (source == null) {
 				return null;
 			}
 			return new CouchbaseList(source.toList());
@@ -299,11 +311,12 @@ public final class OtherConverters {
 	@ReadingConverter
 	public enum CouchbaseListToJsonArray implements Converter<CouchbaseList, JsonArray> {
 		INSTANCE;
-		static ObjectMapper mapper= new ObjectMapper();
+
+		static ObjectMapper mapper = new ObjectMapper();
 
 		@Override
 		public JsonArray convert(CouchbaseList source) {
-			if( source == null ){
+			if (source == null) {
 				return null;
 			}
 			return JsonArray.from(source.export());

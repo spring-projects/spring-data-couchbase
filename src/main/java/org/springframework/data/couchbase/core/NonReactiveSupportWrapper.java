@@ -26,9 +26,9 @@ import java.time.Instant;
 /**
  * Wrapper of {@link TemplateSupport} methods to adapt them to {@link ReactiveTemplateSupport}.
  *
- * @author Emilien Bevierre
  * @author Carlos Espinaco
  * @author Michael Reiche
+ * @author Emilien Bevierre
  * @since 4.2
  */
 public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {

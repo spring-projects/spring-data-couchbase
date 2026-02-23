@@ -36,13 +36,14 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * A Jackson JSON Translator that implements the {@link TranslationService} contract.
+ * A Jackson JSON Translator that implements the {@link TranslationService}
+ * contract.
  *
- * @author Emilien Bevierre
  * @author Michael Nitschinger
  * @author Simon Baslé
  * @author Anastasiia Smirnova
  * @author Mark Paluch
+ * @author Emilien Bevierre
  */
 public class JacksonTranslationService implements TranslationService, InitializingBean {
 
@@ -68,7 +69,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 * @return the encoded JSON String.
 	 */
 	@Override
-	public final String encode(final CouchbaseStorable source) {
+	public final String encode(CouchbaseStorable source) {
 		Writer writer = new StringWriter();
 
 		try {
@@ -86,11 +87,11 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	/**
 	 * Recursively iterates through the sources and adds it to the JSON generator.
 	 *
-	 * @param source the source document
+	 * @param source    the source document
 	 * @param generator the JSON generator.
 	 * @throws IOException
 	 */
-	private void encodeRecursive(final CouchbaseStorable source, final JsonGenerator generator) throws IOException {
+	private void encodeRecursive(CouchbaseStorable source, JsonGenerator generator) throws IOException {
 		generator.writeStartObject();
 
 		for (Map.Entry<String, Object> entry : ((CouchbaseDocument) source).export().entrySet()) {
@@ -102,7 +103,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 				continue;
 			}
 
-			final Class<?> clazz = value.getClass();
+			Class<?> clazz = value.getClass();
 
 			if (simpleTypeHolder.isSimpleType(clazz) && !isEnumOrClass(clazz)) {
 				generator.writeObject(value);
@@ -115,7 +116,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 		generator.writeEndObject();
 	}
 
-	private boolean isEnumOrClass(final Class<?> clazz) {
+	private boolean isEnumOrClass(Class<?> clazz) {
 		return Enum.class.isAssignableFrom(clazz) || Class.class.isAssignableFrom(clazz);
 	}
 
@@ -127,7 +128,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 * @return the decoded structure.
 	 */
 	@Override
-	public final CouchbaseStorable decode(final String source, final CouchbaseStorable target) {
+	public final CouchbaseStorable decode(String source, CouchbaseStorable target) {
 		try (JsonParser parser = factory.createParser(source)) {
 			return decodeWithParser(parser, target);
 		} catch (IOException ex) {
@@ -137,14 +138,15 @@ public class JacksonTranslationService implements TranslationService, Initializi
 
 	/**
 	 * Decode a JSON byte array into the {@link CouchbaseStorable} structure.
-	 * This avoids the intermediate String allocation by parsing directly from bytes.
+	 * This avoids the intermediate String allocation by parsing directly from
+	 * bytes.
 	 *
 	 * @param source the source formatted document as bytes (UTF-8 encoded).
 	 * @param target the target of the populated data.
 	 * @return the decoded structure.
 	 */
 	@Override
-	public final CouchbaseStorable decode(final byte[] source, final CouchbaseStorable target) {
+	public final CouchbaseStorable decode(byte[] source, CouchbaseStorable target) {
 		try (JsonParser parser = factory.createParser(source)) {
 			return decodeWithParser(parser, target);
 		} catch (IOException ex) {
@@ -152,7 +154,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 		}
 	}
 
-	private CouchbaseStorable decodeWithParser(final JsonParser parser, final CouchbaseStorable target) throws IOException {
+	private CouchbaseStorable decodeWithParser(JsonParser parser, CouchbaseStorable target) throws IOException {
 		while (parser.nextToken() != null) {
 			JsonToken currentToken = parser.getCurrentToken();
 
@@ -175,7 +177,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 * @throws IOException
 	 * @returns the decoded object.
 	 */
-	private CouchbaseDocument decodeObject(final JsonParser parser, final CouchbaseDocument target) throws IOException {
+	private CouchbaseDocument decodeObject(JsonParser parser, CouchbaseDocument target) throws IOException {
 		JsonToken currentToken = parser.nextToken();
 
 		String fieldName = "";
@@ -204,7 +206,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 * @throws IOException
 	 * @returns the decoded list.
 	 */
-	private CouchbaseList decodeArray(final JsonParser parser, final CouchbaseList target) throws IOException {
+	private CouchbaseList decodeArray(JsonParser parser, CouchbaseList target) throws IOException {
 		JsonToken currentToken = parser.nextToken();
 
 		while (currentToken != null && currentToken != JsonToken.END_ARRAY) {
@@ -225,12 +227,12 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	/**
 	 * Helper method to decode and assign a primitive.
 	 *
-	 * @param token the type of token.
+	 * @param token  the type of token.
 	 * @param parser the parser with the content.
 	 * @return the decoded primitve.
 	 * @throws IOException
 	 */
-	private Object decodePrimitive(final JsonToken token, final JsonParser parser) throws IOException {
+	private Object decodePrimitive(JsonToken token, JsonParser parser) throws IOException {
 		switch (token) {
 			case VALUE_TRUE:
 			case VALUE_FALSE:
@@ -257,7 +259,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 		}
 	}
 
-	public void setObjectMapper(final ObjectMapper objectMapper) {
+	public void setObjectMapper(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
 

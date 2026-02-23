@@ -31,8 +31,8 @@ import com.couchbase.client.java.kv.ScanType;
 /**
  * {@link ReactiveRangeScanOperationSupport} implementations for Couchbase.
  *
- * @author Emilien Bevierre
  * @author Michael Reiche
+ * @author Emilien Bevierre
  */
 public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOperation {
 

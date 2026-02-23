@@ -35,11 +35,11 @@ import java.time.Instant;
 /**
  * Internal encode/decode support for CouchbaseTemplate.
  *
- * @author Emilien Bevierre
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
  * @author Carlos Espinaco
+ * @author Emilien Bevierre
  * @since 3.0
  */
 class CouchbaseTemplateSupport extends AbstractTemplateSupport implements ApplicationContextAware, TemplateSupport {

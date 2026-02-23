@@ -46,9 +46,9 @@ import com.couchbase.client.java.kv.GetOptions;
 /**
  * {@link ReactiveFindByIdOperation} implementations for Couchbase.
  *
- * @author Emilien Bevierre
  * @author Michael Reiche
  * @author Tigran Babloyan
+ * @author Emilien Bevierre
  */
 public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperation {
 

@@ -38,9 +38,9 @@ import org.springframework.util.Assert;
 /**
  * Internal encode/decode support for {@link ReactiveCouchbaseTemplate}.
  *
- * @author Emilien Bevierre
  * @author Carlos Espinaco
  * @author Michael Reiche
+ * @author Emilien Bevierre
  * @since 4.2
  */
 class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport

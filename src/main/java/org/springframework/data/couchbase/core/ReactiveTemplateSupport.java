@@ -17,7 +17,7 @@ package org.springframework.data.couchbase.core;
 
 import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
+import org.springframework.data.couchbase.core.util.ByteUtils;
 import java.time.Instant;
 
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
@@ -27,8 +27,8 @@ import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 /**
  * ReactiveTemplateSupport
  *
- * @author Emilien Bevierre
  * @author Michael Reiche
+ * @author Emilien Bevierre
  */
 public interface ReactiveTemplateSupport {
 
@@ -39,7 +39,7 @@ public interface ReactiveTemplateSupport {
 
 	default <T> Mono<T> decodeEntity(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass,
 			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
-		return decodeEntity(id, new String(source, StandardCharsets.UTF_8), cas, expiryTime, entityClass, scope,
+		return decodeEntity(id, ByteUtils.getString(source), cas, expiryTime, entityClass, scope,
 				collection, txResultHolder, holder);
 	}
 
