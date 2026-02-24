@@ -87,13 +87,13 @@ public abstract class AbstractTemplateSupport {
 		CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(entityClass);
 
 		if (persistentEntity == null) {
-			final CouchbaseDocument converted = new CouchbaseDocument(id);
+            CouchbaseDocument converted = new CouchbaseDocument(id);
 			Set<Map.Entry<String, Object>> set = translatorFn.apply(translationService, converted).getContent()
 					.entrySet();
 			return (T) set.iterator().next().getValue();
 		}
 
-		final CouchbaseDocument converted = prepareConvertedDocument(id, cas, persistentEntity);
+        CouchbaseDocument converted = prepareConvertedDocument(id, cas, persistentEntity);
 		T readEntity = converter.read(entityClass, translatorFn.apply(translationService, converted));
 		return finalizeEntity(readEntity, id, cas, expiryTime, scope, collection, txResultHolder, holder);
 	}
@@ -120,16 +120,15 @@ public abstract class AbstractTemplateSupport {
 		// TypeInformation<? extends R> typeToUse = typeMapper.readType(source, type);
 
 		if (id == null) {
-			throw new CouchbaseException(
-					TemplateUtils.SELECT_ID + " was null. Either use #{#n1ql.selectEntity} or project "
-							+ TemplateUtils.SELECT_ID);
+			throw new CouchbaseException("%s was null. Either use #{#n1ql.selectEntity} or project %s"
+					.formatted(TemplateUtils.SELECT_ID, TemplateUtils.SELECT_ID));
 		}
 
         return getDocument(id, cas, persistentEntity);
 	}
 
     private static CouchbaseDocument getDocument(Object id, Long cas, CouchbasePersistentEntity persistentEntity) {
-        final CouchbaseDocument converted = new CouchbaseDocument(id);
+        CouchbaseDocument converted = new CouchbaseDocument(id);
 
         // If possible, set the version property in the source so that if the
         // constructor has a long version argument, it will have a value and succeed,
@@ -140,9 +139,9 @@ public abstract class AbstractTemplateSupport {
         // not have a version property, in which case this won't be able to set the version.
         if (persistentEntity.getVersionProperty() != null) {
             if (cas == null) {
-                throw new CouchbaseException("version/cas in the entity but " + TemplateUtils.SELECT_CAS
-                        + " was not in result. Either use #{#n1ql.selectEntity} or project "
-                        + TemplateUtils.SELECT_CAS);
+				throw new CouchbaseException(
+						"version/cas in the entity but %s was not in result. Either use #{#n1ql.selectEntity} or project %s"
+								.formatted(TemplateUtils.SELECT_CAS, TemplateUtils.SELECT_CAS));
             }
             if (cas != 0) {
                 converted.put(persistentEntity.getVersionProperty().getName(), cas);
@@ -153,7 +152,7 @@ public abstract class AbstractTemplateSupport {
 
     private <T> T finalizeEntity(T readEntity, Object id, Long cas, Instant expiryTime, String scope, String collection,
 			Object txResultHolder, CouchbaseResourceHolder holder) {
-		final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
+        ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
 
 		CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(readEntity.getClass());
 
@@ -196,15 +195,15 @@ public abstract class AbstractTemplateSupport {
 			Object txResultHolder, CouchbaseResourceHolder holder) {
 		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 
-		final CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()
+		CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()
 				.getRequiredPersistentEntity(entity.getClass());
 
-		final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+        CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
 		if (idProperty != null) {
 			accessor.setProperty(idProperty, id);
 		}
 
-		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
+        CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 		if (versionProperty != null) {
 			accessor.setProperty(versionProperty, cas);
 		}
@@ -217,11 +216,11 @@ public abstract class AbstractTemplateSupport {
 
 	}
 
-	public Long getCas(final Object entity) {
-		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext
+	public Long getCas(Object entity) {
+        ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
+        CouchbasePersistentEntity<?> persistentEntity = mappingContext
 				.getRequiredPersistentEntity(entity.getClass());
-		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
+        CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 		long cas = 0;
 		if (versionProperty != null) {
 			Object casObject = accessor.getProperty(versionProperty);
@@ -232,11 +231,11 @@ public abstract class AbstractTemplateSupport {
 		return cas;
 	}
 
-	public Object getId(final Object entity) {
-		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext
+	public Object getId(Object entity) {
+        ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
+        CouchbasePersistentEntity<?> persistentEntity = mappingContext
 				.getRequiredPersistentEntity(entity.getClass());
-		final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+        CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
 		Object id = null;
 		if (idProperty != null) {
 			id = accessor.getProperty(idProperty);
@@ -244,13 +243,13 @@ public abstract class AbstractTemplateSupport {
 		return id;
 	}
 
-	public String getJavaNameForEntity(final Class<?> clazz) {
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(clazz);
+	public String getJavaNameForEntity(Class<?> clazz) {
+        CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(clazz);
 		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);
 		return info.getJavaType().getName();
 	}
 
-	<T> ConvertingPropertyAccessor<T> getPropertyAccessor(final T source) {
+	<T> ConvertingPropertyAccessor<T> getPropertyAccessor(T source) {
 		CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(source.getClass());
 		PersistentPropertyAccessor<T> accessor = entity.getPropertyAccessor(source);
 		return new ConvertingPropertyAccessor<>(accessor, converter.getConversionService());
