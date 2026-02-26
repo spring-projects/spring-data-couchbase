@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.cache;
 
-import java.nio.charset.StandardCharsets;
+import org.springframework.data.couchbase.core.util.ByteUtils;
 import java.time.Duration;
 
 import org.springframework.cache.Cache;
@@ -60,7 +60,8 @@ public class CouchbaseCacheConfiguration {
 	}
 
 	/**
-	 * Registers default cache key converters. The following converters get registered:
+	 * Registers default cache key converters. The following converters get
+	 * registered:
 	 * <ul>
 	 * <li>{@link String} to byte using UTF-8 encoding.</li>
 	 * <li>{@link SimpleKey} to {@link String}</li>
@@ -70,12 +71,13 @@ public class CouchbaseCacheConfiguration {
 	 */
 	public static void registerDefaultConverters(final ConverterRegistry registry) {
 		Assert.notNull(registry, "ConverterRegistry must not be null!");
-		registry.addConverter(String.class, byte[].class, source -> source.getBytes(StandardCharsets.UTF_8));
+		registry.addConverter(String.class, byte[].class, ByteUtils::getBytes);
 		registry.addConverter(SimpleKey.class, String.class, SimpleKey::toString);
 	}
 
 	/**
-	 * Set the expiry to apply for cache entries. Use {@link Duration#ZERO} to declare an eternal cache.
+	 * Set the expiry to apply for cache entries. Use {@link Duration#ZERO} to
+	 * declare an eternal cache.
 	 *
 	 * @param expiry must not be {@literal null}.
 	 * @return new {@link CouchbaseCacheConfiguration}.
@@ -112,9 +114,13 @@ public class CouchbaseCacheConfiguration {
 
 	/**
 	 * Disable caching {@literal null} values. <br />
-	 * <strong>NOTE</strong> any {@link org.springframework.cache.Cache#put(Object, Object)} operation involving
-	 * {@literal null} value will error. Nothing will be written to Couchbase, nothing will be removed. An already
-	 * existing key will still be there afterwards with the very same value as before.
+	 * <strong>NOTE</strong> any
+	 * {@link org.springframework.cache.Cache#put(Object, Object)} operation
+	 * involving
+	 * {@literal null} value will error. Nothing will be written to Couchbase,
+	 * nothing will be removed. An already
+	 * existing key will still be there afterwards with the very same value as
+	 * before.
 	 *
 	 * @return new {@link CouchbaseCacheConfiguration}.
 	 */
@@ -124,8 +130,10 @@ public class CouchbaseCacheConfiguration {
 	}
 
 	/**
-	 * Prefix the {@link CouchbaseCache#getName() cache name} with the given value. <br />
-	 * The generated cache key will be: {@code prefix + cache name + "::" + cache entry key}.
+	 * Prefix the {@link CouchbaseCache#getName() cache name} with the given value.
+	 * <br />
+	 * The generated cache key will be:
+	 * {@code prefix + cache name + "::" + cache entry key}.
 	 *
 	 * @param prefix the prefix to prepend to the cache name.
 	 * @return this.
@@ -137,7 +145,8 @@ public class CouchbaseCacheConfiguration {
 	}
 
 	/**
-	 * Use the given {@link CacheKeyPrefix} to compute the prefix for the actual Couchbase {@literal key} given the
+	 * Use the given {@link CacheKeyPrefix} to compute the prefix for the actual
+	 * Couchbase {@literal key} given the
 	 * {@literal cache name} as function input.
 	 *
 	 * @param cacheKeyPrefix must not be {@literal null}.
@@ -165,14 +174,16 @@ public class CouchbaseCacheConfiguration {
 	}
 
 	/**
-	 * @return The {@link ConversionService} used for cache key to {@link String} conversion. Never {@literal null}.
+	 * @return The {@link ConversionService} used for cache key to {@link String}
+	 *         conversion. Never {@literal null}.
 	 */
 	public ConversionService getConversionService() {
 		return conversionService;
 	}
 
 	/**
-	 * @return {@literal true} if cache keys need to be prefixed with the {@link #getKeyPrefixFor(String)} if present or
+	 * @return {@literal true} if cache keys need to be prefixed with the
+	 *         {@link #getKeyPrefixFor(String)} if present or
 	 *         the default which resolves to {@link Cache#getName()}.
 	 */
 	public boolean usePrefix() {
@@ -197,7 +208,8 @@ public class CouchbaseCacheConfiguration {
 	}
 
 	/**
-	 * The name of the collection to use for this cache - if empty uses the default collection.
+	 * The name of the collection to use for this cache - if empty uses the default
+	 * collection.
 	 */
 	public String getCollectionName() {
 		return collectionName;

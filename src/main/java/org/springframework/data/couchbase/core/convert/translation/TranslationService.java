@@ -16,13 +16,17 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
+import org.springframework.data.couchbase.core.util.ByteUtils;
+
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 
 /**
- * Defines a translation service to encode/decode responses into the {@link CouchbaseStorable} format.
+ * Defines a translation service to encode/decode responses into the
+ * {@link CouchbaseStorable} format.
  *
  * @author Michael Nitschinger
+ * @author Emilien Bevierre
  */
 public interface TranslationService {
 
@@ -44,12 +48,29 @@ public interface TranslationService {
 	CouchbaseStorable decode(String source, CouchbaseStorable target);
 
 	/**
+	 * Decodes the target format from a byte array into a {@link CouchbaseDocument}.
+	 * The default implementation converts the bytes to a String via UTF-8 before
+	 * decoding.
+	 * Implementations may override this to parse bytes directly and avoid the
+	 * intermediate String allocation.
+	 *
+	 * @param source the source formatted document as bytes (UTF-8 encoded).
+	 * @param target the target of the populated data.
+	 * @return a properly populated document to work with.
+	 */
+	default CouchbaseStorable decode(byte[] source, CouchbaseStorable target) {
+		return decode(ByteUtils.getString(source), target);
+	}
+
+	/**
 	 * Decodes an ad-hoc JSON object into a corresponding "case" class.
 	 *
-	 * @param source the JSON for the ad-hoc JSON object (from a N1QL query for instance).
+	 * @param source the JSON for the ad-hoc JSON object (from a N1QL query for
+	 *               instance).
 	 * @param target the target class information.
-	 * @param <T> the target class.
-	 * @return an ad-hoc instance of the decoded JSON into the corresponding "case" class.
+	 * @param <T>    the target class.
+	 * @return an ad-hoc instance of the decoded JSON into the corresponding "case"
+	 *         class.
 	 */
 	<T> T decodeFragment(String source, Class<T> target);
 }

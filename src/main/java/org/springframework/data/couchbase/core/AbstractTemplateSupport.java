@@ -19,8 +19,8 @@ import java.lang.reflect.InaccessibleObjectException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
-import com.couchbase.client.core.annotation.Stability;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -40,13 +40,14 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.util.ClassUtils;
 
+import com.couchbase.client.core.annotation.Stability;
 import com.couchbase.client.core.error.CouchbaseException;
-
 
 /**
  * Base shared by Reactive and non-Reactive TemplateSupport
  *
  * @author Michael Reiche
+ * @author Emilien Bevierre
  */
 @Stability.Internal
 public abstract class AbstractTemplateSupport {
@@ -70,61 +71,96 @@ public abstract class AbstractTemplateSupport {
 
 	public <T> T decodeEntityBase(Object id, String source, Long cas, Instant expiryTime, Class<T> entityClass,
 			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		return decodeEntityBase(id, cas, expiryTime, entityClass, scope, collection, txResultHolder, holder,
+				(ts, converted) -> (CouchbaseDocument) ts.decode(source, converted));
+	}
 
-		// this is the entity class defined for the repository. It may not be the class of the document that was read
-		// we will reset it after reading the document
-		//
-		// This will fail for the case where:
-		// 1) The version is defined in the concrete class, but not in the abstract class; and
-		// 2) The constructor takes a "long version" argument resulting in an exception would be thrown if version in
-		// the source is null.
-		// We could expose from the MappingCouchbaseConverter determining the persistent entity from the source,
-		// but that is a lot of work to do every time just for this very rare and avoidable case.
-		// TypeInformation<? extends R> typeToUse = typeMapper.readType(source, type);
+	public <T> T decodeEntityBase(Object id, byte[] source, Long cas, Instant expiryTime, Class<T> entityClass,
+			String scope, String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		return decodeEntityBase(id, cas, expiryTime, entityClass, scope, collection, txResultHolder, holder,
+				(ts, converted) -> (CouchbaseDocument) ts.decode(source, converted));
+	}
 
+	private <T> T decodeEntityBase(Object id, Long cas, Instant expiryTime, Class<T> entityClass, String scope,
+			String collection, Object txResultHolder, CouchbaseResourceHolder holder,
+			BiFunction<TranslationService, CouchbaseDocument, CouchbaseDocument> translatorFn) {
 		CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(entityClass);
 
-		if (persistentEntity == null) { // method could return a Long, Boolean, String etc.
-			// QueryExecutionConverters.unwrapWrapperTypes will recursively unwrap until there is nothing left
-			// to unwrap. This results in List<String[]> being unwrapped past String[] to String, so this may also be a
-			// Collection (or Array) of entityClass. We have no way of knowing - so just assume it is what we are told.
-			// if this is a Collection or array, only the first element will be returned.
-			final CouchbaseDocument converted = new CouchbaseDocument(id);
-			Set<Map.Entry<String, Object>> set = ((CouchbaseDocument) translationService.decode(source, converted))
-					.getContent().entrySet();
+		if (persistentEntity == null) {
+            CouchbaseDocument converted = new CouchbaseDocument(id);
+			Set<Map.Entry<String, Object>> set = translatorFn.apply(translationService, converted).getContent()
+					.entrySet();
 			return (T) set.iterator().next().getValue();
 		}
 
+        CouchbaseDocument converted = prepareConvertedDocument(id, cas, persistentEntity);
+		T readEntity = converter.read(entityClass, translatorFn.apply(translationService, converted));
+		return finalizeEntity(readEntity, id, cas, expiryTime, scope, collection, txResultHolder, holder);
+	}
+
+	private CouchbaseDocument prepareConvertedDocument(Object id, Long cas,
+			CouchbasePersistentEntity persistentEntity) {
+		// persistentEntity is derived from the entityClass declared in the
+		// repository definition. It may be an abstract class rather than the
+		// concrete class of the document being read. The concrete type is only
+		// known after converter.read() is called, therefore version/cas is set again
+		// on the final entity in finalizeEntity().
+		//
+		// Pre-populating the CAS/version into the source document (done in getDocument)
+		// is a best-effort step to avoid a construction failure when the concrete
+		// class constructor takes a primitive "long version" argument (null is not a
+		// valid value for a primitive). If the version property is only declared on the
+		// concrete subclass and not on the abstract base, pre-population is not
+		// possible here and the issue can be avoided by using "Long" instead of "long".
+		//
+		// An alternative would be to resolve the actual concrete type from the source
+		// document's type metadata before constructing it (see the comment
+		// below), but that adds overhead for every decode to solve a rare and avoidable
+		// case.
+		// TypeInformation<? extends R> typeToUse = typeMapper.readType(source, type);
+
 		if (id == null) {
-			throw new CouchbaseException(TemplateUtils.SELECT_ID + " was null. Either use #{#n1ql.selectEntity} or project "
-					+ TemplateUtils.SELECT_ID);
+			throw new CouchbaseException("%s was null. Either use #{#n1ql.selectEntity} or project %s"
+					.formatted(TemplateUtils.SELECT_ID, TemplateUtils.SELECT_ID));
 		}
 
-		final CouchbaseDocument converted = new CouchbaseDocument(id);
+        return getDocument(id, cas, persistentEntity);
+	}
 
-		// if possible, set the version property in the source so that if the constructor has a long version argument,
-		// it will have a value and not fail (as null is not a valid argument for a long argument). This possible failure
-		// can be avoid by defining the argument as Long instead of long.
-		// persistentEntity is still the (possibly abstract) class specified in the repository definition
-		// it's possible that the abstract class does not have a version property, and this won't be able to set the version
-		if (persistentEntity.getVersionProperty() != null) {
-			if (cas == null) {
-				throw new CouchbaseException("version/cas in the entity but " + TemplateUtils.SELECT_CAS
-						+ " was not in result. Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_CAS);
-			}
-			if (cas != 0) {
-				converted.put(persistentEntity.getVersionProperty().getName(), cas);
-			}
-		}
+    private static CouchbaseDocument getDocument(Object id, Long cas, CouchbasePersistentEntity persistentEntity) {
+        CouchbaseDocument converted = new CouchbaseDocument(id);
 
-		// if the constructor has an argument that is long version, then construction will fail if the 'version'
-		// is not available as 'null' is not a legal value for a long. Changing the arg to "Long version" would solve this.
-		// (Version doesn't come from 'source', it comes from the cas argument to decodeEntity)
-		T readEntity = converter.read(entityClass, (CouchbaseDocument) translationService.decode(source, converted));
-		final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
+        // If possible, set the version property in the source so that if the
+        // constructor has a long version argument, it will have a value and succeed,
+        // as null is not a valid argument for a long. This failure can be avoided by
+        // defining the argument as Long instead of long.
+        // Note that persistentEntity is still the (possibly abstract) class specified
+        // in the repository definition, so it's possible that the abstract class does
+        // not have a version property, in which case this won't be able to set the version.
+        if (persistentEntity.getVersionProperty() != null) {
+            if (cas == null) {
+				throw new CouchbaseException(
+						"version/cas in the entity but %s was not in result. Either use #{#n1ql.selectEntity} or project %s"
+								.formatted(TemplateUtils.SELECT_CAS, TemplateUtils.SELECT_CAS));
+            }
+            if (cas != 0) {
+                converted.put(persistentEntity.getVersionProperty().getName(), cas);
+            }
+        }
+        return converted;
+    }
 
-		persistentEntity = couldBePersistentEntity(readEntity.getClass());
+    private <T> T finalizeEntity(T readEntity, Object id, Long cas, Instant expiryTime, String scope, String collection,
+			Object txResultHolder, CouchbaseResourceHolder holder) {
+        ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
 
+		CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(readEntity.getClass());
+
+		// If the constructor has a long version argument, construction will fail if
+		// 'version' is not available, as null is not a legal value for a long.
+		// We therefore use the object-wrapped Long type.
+		// (Version doesn't come from 'source', it comes from the cas argument to
+		// decodeEntity.)
 		if (cas != null && cas != 0 && persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 		}
@@ -133,7 +169,8 @@ public abstract class AbstractTemplateSupport {
 			accessor.setProperty(persistentEntity.getExpiryProperty(), expiryTime);
 		}
 
-		N1qlJoinResolver.handleProperties(persistentEntity, accessor, getReactiveTemplate(), id.toString(), scope, collection);
+		N1qlJoinResolver.handleProperties(persistentEntity, accessor, getReactiveTemplate(), id.toString(), scope,
+				collection);
 
 		if (holder != null) {
 			holder.transactionResultHolder(txResultHolder, (T) accessor.getBean());
@@ -158,15 +195,15 @@ public abstract class AbstractTemplateSupport {
 			Object txResultHolder, CouchbaseResourceHolder holder) {
 		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 
-		final CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()
+		CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()
 				.getRequiredPersistentEntity(entity.getClass());
 
-		final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+        CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
 		if (idProperty != null) {
 			accessor.setProperty(idProperty, id);
 		}
 
-		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
+        CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 		if (versionProperty != null) {
 			accessor.setProperty(versionProperty, cas);
 		}
@@ -179,10 +216,11 @@ public abstract class AbstractTemplateSupport {
 
 	}
 
-	public Long getCas(final Object entity) {
-		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
-		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
+	public Long getCas(Object entity) {
+        ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
+        CouchbasePersistentEntity<?> persistentEntity = mappingContext
+				.getRequiredPersistentEntity(entity.getClass());
+        CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 		long cas = 0;
 		if (versionProperty != null) {
 			Object casObject = accessor.getProperty(versionProperty);
@@ -193,10 +231,11 @@ public abstract class AbstractTemplateSupport {
 		return cas;
 	}
 
-	public Object getId(final Object entity) {
-		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
-		final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+	public Object getId(Object entity) {
+        ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
+        CouchbasePersistentEntity<?> persistentEntity = mappingContext
+				.getRequiredPersistentEntity(entity.getClass());
+        CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
 		Object id = null;
 		if (idProperty != null) {
 			id = accessor.getProperty(idProperty);
@@ -204,13 +243,13 @@ public abstract class AbstractTemplateSupport {
 		return id;
 	}
 
-	public String getJavaNameForEntity(final Class<?> clazz) {
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(clazz);
+	public String getJavaNameForEntity(Class<?> clazz) {
+        CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(clazz);
 		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);
 		return info.getJavaType().getName();
 	}
 
-	<T> ConvertingPropertyAccessor<T> getPropertyAccessor(final T source) {
+	<T> ConvertingPropertyAccessor<T> getPropertyAccessor(T source) {
 		CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(source.getClass());
 		PersistentPropertyAccessor<T> accessor = entity.getPropertyAccessor(source);
 		return new ConvertingPropertyAccessor<>(accessor, converter.getConversionService());

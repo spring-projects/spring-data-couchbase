@@ -44,9 +44,9 @@ import com.couchbase.client.java.kv.ReplicateTo;
 /**
  * {@link ReactiveRemoveByIdOperation} implementations for Couchbase.
  *
- * @author Emilien Bevierre
  * @author Michael Reiche
  * @author Tigran Babloyan
+ * @author Emilien Bevierre
  */
 public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOperation {
 

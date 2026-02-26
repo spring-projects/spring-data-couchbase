@@ -132,10 +132,10 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
     String id = UUID.randomUUID().toString();
 
     Airport airport = new Airport(id, "testThreadLocal", "icao");
-    Disposable s = reactiveAirportMustScopeRepository.withScope(scopeName).findById(airport.getId()).doOnNext(u -> {
+    reactiveAirportMustScopeRepository.withScope(scopeName).findById(airport.getId()).doOnNext(u -> {
         throw new RuntimeException("User already Exists! " + u);
     }).then(reactiveAirportMustScopeRepository.withScope(scopeName).save(airport))
-        .subscribe(u -> LOGGER.info("User Persisted Successfully! {}", u));
+        .block();
 
     reactiveAirportMustScopeRepository.withScope(scopeName).deleteById(id).block();
     }

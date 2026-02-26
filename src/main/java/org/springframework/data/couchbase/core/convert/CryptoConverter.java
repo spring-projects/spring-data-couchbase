@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core.convert;
 
-import java.nio.charset.StandardCharsets;
+import org.springframework.data.couchbase.core.util.ByteUtils;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -97,7 +97,8 @@ public class CryptoConverter implements
 			String jsonString = "{\"" + property.getFieldName() + "\":" + decryptedString + "}";
 			try {
 				CouchbaseDocument decryptedDoc = new CouchbaseDocument().setContent(JsonObject.fromJson(jsonString));
-				return context.getConverter().getPotentiallyConvertedSimpleRead(decryptedDoc.get(property.getFieldName()),
+				return context.getConverter().getPotentiallyConvertedSimpleRead(
+						decryptedDoc.get(property.getFieldName()),
 						property);
 			} catch (InvalidArgumentException | ConverterNotFoundException | ConversionFailedException e) {
 				throw new RuntimeException(decryptedString, e);
@@ -114,7 +115,7 @@ public class CryptoConverter implements
 		Class<?> targetType = cnvs.getCustomWriteTarget(property.getType()).orElse(null);
 		Object value = context.getConverter().getPotentiallyConvertedSimpleWrite(property, accessor, false);
 		if (value == null) { // null
-			plainText = "null".getBytes(StandardCharsets.UTF_8);
+			plainText = ByteUtils.getBytes("null");
 		} else if (value.getClass().isArray()) { // array
 			JsonArray ja;
 			if (value.getClass().getComponentType().isPrimitive()) {
@@ -133,7 +134,7 @@ public class CryptoConverter implements
 					throw new RuntimeException(e);
 				}
 			}
-			plainText = plainString.getBytes(StandardCharsets.UTF_8);
+			plainText = ByteUtils.getBytes(plainString);
 		} else { // an entity
 			CouchbaseDocument doc = new CouchbaseDocument();
 			context.getConverter().writeInternalRoot(value, doc, property.getTypeInformation(), false, property, false);
