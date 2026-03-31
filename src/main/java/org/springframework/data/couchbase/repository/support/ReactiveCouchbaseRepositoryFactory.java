@@ -26,6 +26,7 @@ import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOp
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.ReactivePartTreeCouchbaseQuery;
+import org.springframework.data.couchbase.repository.query.ReactiveSearchBasedCouchbaseQuery;
 import org.springframework.data.couchbase.repository.query.ReactiveStringBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
@@ -155,7 +156,9 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 			ReactiveCouchbaseQueryMethod queryMethod = new ReactiveCouchbaseQueryMethod(method, metadata, factory,
 					mappingContext);
 
-			if (queryMethod.hasN1qlAnnotation()) {
+			if (queryMethod.hasSearchAnnotation()) {
+				return new ReactiveSearchBasedCouchbaseQuery(queryMethod, couchbaseOperations);
+			} else if (queryMethod.hasN1qlAnnotation()) {
 				return new ReactiveStringBasedCouchbaseQuery(queryMethod, couchbaseOperations,
 						valueExpressionDelegate, namedQueries);
 			} else {

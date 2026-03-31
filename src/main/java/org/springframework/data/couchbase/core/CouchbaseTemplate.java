@@ -49,6 +49,7 @@ import reactor.core.publisher.Mono;
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
  * @author Tigran Babloyan
+ * @author Emilien Bevierre
  * @since 3.0
  */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContextAware {
@@ -186,6 +187,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	@Override
 	public <T> ExecutableFindByAnalytics<T> findByAnalytics(Class<T> domainType) {
 		return new ExecutableFindByAnalyticsOperationSupport(this).findByAnalytics(domainType);
+	}
+
+	@Override
+	public <T> ExecutableFindBySearch<T> findBySearch(Class<T> domainType) {
+		return new ExecutableFindBySearchOperationSupport(this).findBySearch(domainType);
 	}
 
 	@Override
