@@ -33,6 +33,7 @@ import org.springframework.data.couchbase.core.SearchResult;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.Search;
 import org.springframework.data.couchbase.repository.SearchIndex;
@@ -268,8 +269,21 @@ class ReactiveSearchBasedCouchbaseQueryTests {
 		}
 
 		@Override
+		public <P> ReactiveFindBySearchOperation.FindBySearchWithSkip<T> withSort(TypedPropertyPath<P, ?> property,
+				TypedPropertyPath<P, ?>... additionalProperties) {
+			return this;
+		}
+
+		@Override
 		public ReactiveFindBySearchOperation.FindBySearchWithSort<T> withHighlight(
 				com.couchbase.client.java.search.HighlightStyle style, String... fields) {
+			return this;
+		}
+
+		@Override
+		public <P> ReactiveFindBySearchOperation.FindBySearchWithSort<T> withHighlight(
+				com.couchbase.client.java.search.HighlightStyle style, TypedPropertyPath<P, ?> field,
+				TypedPropertyPath<P, ?>... additionalFields) {
 			return this;
 		}
 
@@ -281,6 +295,12 @@ class ReactiveSearchBasedCouchbaseQueryTests {
 
 		@Override
 		public ReactiveFindBySearchOperation.FindBySearchWithFacets<T> withFields(String... fields) {
+			return this;
+		}
+
+		@Override
+		public <P> ReactiveFindBySearchOperation.FindBySearchWithFacets<T> withFields(
+				TypedPropertyPath<P, ?> field, TypedPropertyPath<P, ?>... additionalFields) {
 			return this;
 		}
 

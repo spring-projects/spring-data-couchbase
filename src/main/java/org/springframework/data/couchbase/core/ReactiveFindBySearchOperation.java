@@ -21,6 +21,7 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.WithSearchConsistency;
@@ -192,6 +193,9 @@ public interface ReactiveFindBySearchOperation {
 		 * @param sort the sort specifications.
 		 */
 		FindBySearchWithSkip<T> withSort(SearchSort... sort);
+
+		<P> FindBySearchWithSkip<T> withSort(TypedPropertyPath<P, ?> property,
+				TypedPropertyPath<P, ?>... additionalProperties);
 	}
 
 	/**
@@ -213,6 +217,14 @@ public interface ReactiveFindBySearchOperation {
 		 */
 		default FindBySearchWithSort<T> withHighlight(String... fields) {
 			return withHighlight(HighlightStyle.SERVER_DEFAULT, fields);
+		}
+
+		<P> FindBySearchWithSort<T> withHighlight(HighlightStyle style, TypedPropertyPath<P, ?> field,
+				TypedPropertyPath<P, ?>... additionalFields);
+
+		default <P> FindBySearchWithSort<T> withHighlight(TypedPropertyPath<P, ?> field,
+				TypedPropertyPath<P, ?>... additionalFields) {
+			return withHighlight(HighlightStyle.SERVER_DEFAULT, field, additionalFields);
 		}
 	}
 
@@ -238,6 +250,9 @@ public interface ReactiveFindBySearchOperation {
 		 * @param fields the field names.
 		 */
 		FindBySearchWithFacets<T> withFields(String... fields);
+
+		<P> FindBySearchWithFacets<T> withFields(TypedPropertyPath<P, ?> field,
+				TypedPropertyPath<P, ?>... additionalFields);
 	}
 
 	/**

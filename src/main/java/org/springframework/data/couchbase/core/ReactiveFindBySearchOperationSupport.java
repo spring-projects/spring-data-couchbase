@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
 
@@ -106,16 +107,16 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 		public TerminatingFindBySearch<T> matching(SearchRequest searchRequest) {
 			Assert.notNull(searchRequest, "SearchRequest must not be null!");
 			return new ReactiveFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
-					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets,
-					fields, limitSkip, support);
+					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets, fields,
+					limitSkip, support);
 		}
 
 		@Override
 		public FindBySearchWithProjection<T> withIndex(String indexName) {
 			Assert.notNull(indexName, "Index name must not be null!");
 			return new ReactiveFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
-					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets,
-					fields, limitSkip, support);
+					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets, fields,
+					limitSkip, support);
 		}
 
 		@Override
@@ -129,8 +130,8 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 		@Override
 		public FindBySearchInScope<T> withConsistency(SearchScanConsistency scanConsistency) {
 			return new ReactiveFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
-					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets,
-					fields, limitSkip, support);
+					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets, fields,
+					limitSkip, support);
 		}
 
 		@Override
@@ -150,8 +151,8 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 		@Override
 		public FindBySearchWithQuery<T> withOptions(final SearchOptions options) {
 			return new ReactiveFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
-					scanConsistency, scope, collection, options != null ? options : this.options, sort,
-					highlightStyle, highlightFields, facets, fields, limitSkip, support);
+					scanConsistency, scope, collection, options != null ? options : this.options, sort, highlightStyle,
+					highlightFields, facets, fields, limitSkip, support);
 		}
 
 		@Override
@@ -180,10 +181,23 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 		}
 
 		@Override
+		public <P> FindBySearchWithSkip<T> withSort(TypedPropertyPath<P, ?> property,
+				TypedPropertyPath<P, ?>... additionalProperties) {
+			return withSort(SearchPropertyPathSupport.toSearchSorts(template.getConverter(), property, additionalProperties));
+		}
+
+		@Override
 		public FindBySearchWithSort<T> withHighlight(HighlightStyle style, String... fields) {
 			return new ReactiveFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
-					scanConsistency, scope, collection, options, sort, style, fields, facets,
-					this.fields, limitSkip, support);
+					scanConsistency, scope, collection, options, sort, style, fields, facets, this.fields, limitSkip,
+					support);
+		}
+
+		@Override
+		public <P> FindBySearchWithSort<T> withHighlight(HighlightStyle style, TypedPropertyPath<P, ?> field,
+				TypedPropertyPath<P, ?>... additionalFields) {
+			return withHighlight(style,
+					SearchPropertyPathSupport.getMappedFieldPaths(template.getConverter(), field, additionalFields));
 		}
 
 		@Override
@@ -198,6 +212,12 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 			return new ReactiveFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
 					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets,
 					fields, limitSkip, support);
+		}
+
+		@Override
+		public <P> FindBySearchWithFacets<T> withFields(TypedPropertyPath<P, ?> field,
+				TypedPropertyPath<P, ?>... additionalFields) {
+			return withFields(SearchPropertyPathSupport.getMappedFieldPaths(template.getConverter(), field, additionalFields));
 		}
 
 		@Override
@@ -223,7 +243,7 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 				return TransactionalSupport.verifyNotInTransaction("findBySearch")
 						.thenMany(executeSearch()
 								.flatMapMany(ReactiveSearchResult::rows))
-						.concatMap(row -> hydrateRow(row))
+						.concatMap(this::hydrateRow)
 						.onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -331,7 +351,6 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 						return Mono.empty();
 					});
 		}
-
 		private Mono<ReactiveSearchResult> executeSearch() {
 			SearchOptions opts = buildSearchOptions();
 			if (scope != null) {

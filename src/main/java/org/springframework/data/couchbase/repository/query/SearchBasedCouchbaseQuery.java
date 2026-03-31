@@ -170,7 +170,6 @@ public class SearchBasedCouchbaseQuery implements RepositoryQuery {
 				: searchOp;
 		return limit != null ? withSkipApplied.withLimit(limit) : withSkipApplied;
 	}
-
 	private static String resolveIndexName(CouchbaseQueryMethod method) {
 		SearchIndex methodAnnotation = method.getAnnotation(SearchIndex.class);
 		if (methodAnnotation != null) {
