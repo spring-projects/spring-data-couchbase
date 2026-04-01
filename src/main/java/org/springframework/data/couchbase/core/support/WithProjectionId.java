@@ -15,13 +15,27 @@
  */
 package org.springframework.data.couchbase.core.support;
 
+import java.util.Arrays;
+
+import org.springframework.data.core.TypedPropertyPath;
+
 /**
  * A common interface for those that support project()
  *
  * @author Michael Reiche
+ * @author Emilien Bevierre
  * @param <R> - the entity class
  */
 public interface WithProjectionId<R> {
 	Object project(String[] fields);
 
+	/**
+	 * Type-safe variant of {@link #project(String[])} using property paths.
+	 *
+	 * @param fields the property paths to project.
+	 * @since 6.1
+	 */
+	default Object project(TypedPropertyPath<?, ?>... fields) {
+		return project(Arrays.stream(fields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+	}
 }

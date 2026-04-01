@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -47,6 +48,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Emilien Bevierre
  */
 public class Query {
 
@@ -173,6 +175,18 @@ public class Query {
 	 */
 	public Query distinct(String[] distinctFields) {
 		this.distinctFields = distinctFields;
+		return this;
+	}
+
+	/**
+	 * Type-safe variant of {@link #distinct(String[])} using property references.
+	 *
+	 * @param distinctFields the property references to use as distinct fields.
+	 * @since 6.1
+	 */
+	@SafeVarargs
+	public final <T> Query distinct(TypedPropertyPath<T, ?>... distinctFields) {
+		this.distinctFields = Arrays.stream(distinctFields).map(TypedPropertyPath::toDotPath).toArray(String[]::new);
 		return this;
 	}
 

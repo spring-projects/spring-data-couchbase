@@ -20,6 +20,9 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import java.util.Arrays;
+
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
 import org.springframework.data.couchbase.core.support.InCollection;
@@ -38,6 +41,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * Query Operations
  *
  * @author Christoph Strobl
+ * @author Emilien Bevierre
  * @since 2.0
  */
 public interface ExecutableFindByQueryOperation {
@@ -270,6 +274,17 @@ public interface ExecutableFindByQueryOperation {
 		 * @throws IllegalArgumentException if returnType is {@literal null}.
 		 */
 		FindByQueryWithProjection<T> project(String[] fields);
+
+		/**
+		 * Type-safe variant of {@link #project(String[])} using property paths.
+		 *
+		 * @param fields the property paths to project.
+		 * @since 6.1
+		 */
+		@SuppressWarnings("unchecked")
+		default FindByQueryWithProjection<T> project(TypedPropertyPath<?, ?>... fields) {
+			return project(Arrays.stream(fields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+		}
 	}
 
 	/**
@@ -288,6 +303,17 @@ public interface ExecutableFindByQueryOperation {
 		 */
 		@Override
 		FindByQueryWithProjection<T> distinct(String[] distinctFields);
+
+		/**
+		 * Type-safe variant of {@link #distinct(String[])} using property paths.
+		 *
+		 * @param distinctFields the property paths for distinct fields.
+		 * @since 6.1
+		 */
+		@SuppressWarnings("unchecked")
+		default FindByQueryWithProjection<T> distinct(TypedPropertyPath<?, ?>... distinctFields) {
+			return distinct(Arrays.stream(distinctFields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+		}
 	}
 
 	/**

@@ -16,8 +16,10 @@
 package org.springframework.data.couchbase.core;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.support.OneAndAllId;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.WithGetOptions;
@@ -33,6 +35,7 @@ import org.springframework.data.couchbase.core.support.WithLock;
  *
  * @author Christoph Strobl
  * @author Tigran Babloyan
+ * @author Emilien Bevierre
  * @since 2.0
  */
 public interface ExecutableFindByIdOperation {
@@ -122,6 +125,17 @@ public interface ExecutableFindByIdOperation {
 		 */
 		@Override
 		FindByIdInScope<T> project(String... fields);
+
+		/**
+		 * Type-safe variant of {@link #project(String...)} using property paths.
+		 *
+		 * @param fields the property paths to project.
+		 * @since 6.1
+		 */
+		@SuppressWarnings("unchecked")
+		default FindByIdInScope<T> project(TypedPropertyPath<?, ?>... fields) {
+			return project(Arrays.stream(fields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+		}
 	}
 
 	interface FindByIdWithExpiry<T> extends FindByIdWithProjection<T>, WithExpiry<T> {

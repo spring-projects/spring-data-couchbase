@@ -19,17 +19,20 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.MutateInOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.support.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
  * Mutate In Operations
  *
  * @author Tigran Babloyan
+ * @author Emilien Bevierre
  * @since 5.1
  */
 public interface ExecutableMutateInByIdOperation {
@@ -98,6 +101,42 @@ public interface ExecutableMutateInByIdOperation {
 		 * By default the CAS value is not provided.
 		 */
 		MutateInByIdWithPaths<T> withCasProvided();
+
+		/**
+		 * Type-safe variant of {@link #withRemovePaths(String...)} using property paths.
+		 * @since 6.1
+		 */
+		@SuppressWarnings("unchecked")
+		default MutateInByIdWithPaths<T> withRemovePaths(TypedPropertyPath<?, ?>... removePaths) {
+			return withRemovePaths(Arrays.stream(removePaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+		}
+
+		/**
+		 * Type-safe variant of {@link #withInsertPaths(String...)} using property paths.
+		 * @since 6.1
+		 */
+		@SuppressWarnings("unchecked")
+		default MutateInByIdWithPaths<T> withInsertPaths(TypedPropertyPath<?, ?>... insertPaths) {
+			return withInsertPaths(Arrays.stream(insertPaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+		}
+
+		/**
+		 * Type-safe variant of {@link #withUpsertPaths(String...)} using property paths.
+		 * @since 6.1
+		 */
+		@SuppressWarnings("unchecked")
+		default MutateInByIdWithPaths<T> withUpsertPaths(TypedPropertyPath<?, ?>... upsertPaths) {
+			return withUpsertPaths(Arrays.stream(upsertPaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+		}
+
+		/**
+		 * Type-safe variant of {@link #withReplacePaths(String...)} using property paths.
+		 * @since 6.1
+		 */
+		@SuppressWarnings("unchecked")
+		default MutateInByIdWithPaths<T> withReplacePaths(TypedPropertyPath<?, ?>... replacePaths) {
+			return withReplacePaths(Arrays.stream(replacePaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+		}
 	}
 
 	/**
