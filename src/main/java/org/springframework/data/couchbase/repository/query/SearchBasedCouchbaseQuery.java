@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindBySearchOperation;
+import org.springframework.data.couchbase.core.SearchResult;
 import org.springframework.data.couchbase.repository.Search;
 import org.springframework.data.couchbase.repository.SearchIndex;
 import org.springframework.data.domain.PageImpl;
@@ -109,9 +110,8 @@ public class SearchBasedCouchbaseQuery implements RepositoryQuery {
 
 	private PageImpl<?> executePage(ParametersParameterAccessor accessor, SearchRequest request) {
 		Pageable pageable = accessor.getPageable();
-		List<?> content = createQueryOperation(accessor, true).matching(request).all();
-		long total = createQueryOperation(accessor, false).matching(request).count();
-		return new PageImpl<>(content, pageable, total);
+		SearchResult<?> searchResult = createQueryOperation(accessor, true).matching(request).result();
+		return new PageImpl<>(searchResult.entities(), pageable, searchResult.totalRows());
 	}
 
 	private SliceImpl<?> executeSlice(ParametersParameterAccessor accessor, SearchRequest request) {

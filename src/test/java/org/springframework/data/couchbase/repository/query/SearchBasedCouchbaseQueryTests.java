@@ -325,7 +325,15 @@ class SearchBasedCouchbaseQueryTests {
 
 		@Override
 		public SearchResult<T> result() {
-			return new SearchResult<>(values(), Collections.emptyList(), null, Collections.emptyMap());
+			com.couchbase.client.core.api.search.result.CoreSearchMetrics coreMetrics =
+					new com.couchbase.client.core.api.search.result.CoreSearchMetrics(
+							java.time.Duration.ZERO, totalCount, 0.0, 1, 0);
+			com.couchbase.client.core.api.search.CoreSearchMetaData coreMetaData =
+					new com.couchbase.client.core.api.search.CoreSearchMetaData(
+							Collections.emptyMap(), coreMetrics);
+			com.couchbase.client.java.search.SearchMetaData metaData =
+					new com.couchbase.client.java.search.SearchMetaData(coreMetaData);
+			return new SearchResult<>(values(), Collections.emptyList(), metaData, Collections.emptyMap());
 		}
 
 		@Override
