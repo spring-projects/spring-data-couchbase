@@ -153,7 +153,7 @@ class CouchbaseTemplateSearchIntegrationTests extends JavaIntegrationTests {
 		}
 	}
 
-    /// Uses ConsistentWith to avoid flakiness from eventual consistency.
+	// Uses ConsistentWith to avoid flakiness from eventual consistency.
 	@Test
 	void searchOneReturnsExactlyOne() {
 		String unique = "uniquefts" + UUID.randomUUID().toString().replace("-", "");
