@@ -86,6 +86,7 @@ class CouchbaseTemplateSearchIntegrationTests extends JavaIntegrationTests {
 			logCluster(cluster, "tearDownFtsIndex");
 		}
 		callSuperAfterAll(new Object() {});
+        cluster.disconnect();
 	}
 
 	/**
