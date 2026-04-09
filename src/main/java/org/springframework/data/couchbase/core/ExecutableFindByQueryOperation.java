@@ -16,11 +16,11 @@
 package org.springframework.data.couchbase.core;
 
 import java.util.List;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import java.util.Arrays;
 
 import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.query.Query;
