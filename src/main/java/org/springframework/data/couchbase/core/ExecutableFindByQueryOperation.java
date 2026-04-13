@@ -282,7 +282,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @since 6.1
 		 */
 		@SuppressWarnings("unchecked")
-		default FindByQueryWithProjection<T> project(TypedPropertyPath<?, ?>... fields) {
+		default FindByQueryWithProjection<T> project(TypedPropertyPath<T, ?>... fields) {
 			return project(Arrays.stream(fields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 	}
@@ -311,7 +311,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @since 6.1
 		 */
 		@SuppressWarnings("unchecked")
-		default FindByQueryWithProjection<T> distinct(TypedPropertyPath<?, ?>... distinctFields) {
+		default FindByQueryWithProjection<T> distinct(TypedPropertyPath<T, ?>... distinctFields) {
 			return distinct(Arrays.stream(distinctFields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 	}

@@ -136,7 +136,7 @@ public interface ReactiveFindByIdOperation {
 		 * @since 6.1
 		 */
 		@SuppressWarnings("unchecked")
-		default FindByIdInCollection<T> project(TypedPropertyPath<?, ?>... fields) {
+		default FindByIdInCollection<T> project(TypedPropertyPath<T, ?>... fields) {
 			return project(Arrays.stream(fields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 

@@ -40,7 +40,8 @@ public interface WithMutateInPaths<T> {
 	 *
 	 * @since 6.1
 	 */
-	default Object withRemovePaths(TypedPropertyPath<?, ?>... removePaths) {
+	@SuppressWarnings("unchecked")
+	default Object withRemovePaths(TypedPropertyPath<T, ?>... removePaths) {
 		return withRemovePaths(Arrays.stream(removePaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 	}
 
@@ -49,7 +50,8 @@ public interface WithMutateInPaths<T> {
 	 *
 	 * @since 6.1
 	 */
-	default Object withInsertPaths(TypedPropertyPath<?, ?>... insertPaths) {
+	@SuppressWarnings("unchecked")
+	default Object withInsertPaths(TypedPropertyPath<T, ?>... insertPaths) {
 		return withInsertPaths(Arrays.stream(insertPaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 	}
 
@@ -58,7 +60,8 @@ public interface WithMutateInPaths<T> {
 	 *
 	 * @since 6.1
 	 */
-	default Object withReplacePaths(TypedPropertyPath<?, ?>... replacePaths) {
+	@SuppressWarnings("unchecked")
+	default Object withReplacePaths(TypedPropertyPath<T, ?>... replacePaths) {
 		return withReplacePaths(Arrays.stream(replacePaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 	}
 
@@ -67,7 +70,8 @@ public interface WithMutateInPaths<T> {
 	 *
 	 * @since 6.1
 	 */
-	default Object withUpsertPaths(TypedPropertyPath<?, ?>... upsertPaths) {
+	@SuppressWarnings("unchecked")
+	default Object withUpsertPaths(TypedPropertyPath<T, ?>... upsertPaths) {
 		return withUpsertPaths(Arrays.stream(upsertPaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 	}
 }

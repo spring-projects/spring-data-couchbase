@@ -35,7 +35,8 @@ public interface WithProjectionId<R> {
 	 * @param fields the property paths to project.
 	 * @since 6.1
 	 */
-	default Object project(TypedPropertyPath<?, ?>... fields) {
+	@SuppressWarnings("unchecked")
+	default Object project(TypedPropertyPath<R, ?>... fields) {
 		return project(Arrays.stream(fields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 	}
 }

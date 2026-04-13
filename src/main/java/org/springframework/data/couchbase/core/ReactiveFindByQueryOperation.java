@@ -228,7 +228,8 @@ public interface ReactiveFindByQueryOperation {
 		 * @param fields the property paths to project.
 		 * @since 6.1
 		 */
-		default FindByQueryWithProjection<T> project(TypedPropertyPath<?, ?>... fields) {
+		@SuppressWarnings("unchecked")
+		default FindByQueryWithProjection<T> project(TypedPropertyPath<T, ?>... fields) {
 			return project(Arrays.stream(fields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 	}
@@ -255,7 +256,8 @@ public interface ReactiveFindByQueryOperation {
 		 * @param distinctFields the property paths for distinct fields.
 		 * @since 6.1
 		 */
-		default FindByQueryWithProjection<T> distinct(TypedPropertyPath<?, ?>... distinctFields) {
+		@SuppressWarnings("unchecked")
+		default FindByQueryWithProjection<T> distinct(TypedPropertyPath<T, ?>... distinctFields) {
 			return distinct(Arrays.stream(distinctFields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 	}

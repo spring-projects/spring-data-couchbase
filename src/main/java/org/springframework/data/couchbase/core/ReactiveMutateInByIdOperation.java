@@ -106,7 +106,7 @@ public interface ReactiveMutateInByIdOperation {
 		 * Type-safe variant of {@link #withRemovePaths(String...)} using property paths.
 		 * @since 6.1
 		 */
-		default MutateInByIdWithPaths<T> withRemovePaths(TypedPropertyPath<?, ?>... removePaths) {
+		default MutateInByIdWithPaths<T> withRemovePaths(TypedPropertyPath<T, ?>... removePaths) {
 			return withRemovePaths(Arrays.stream(removePaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 
@@ -114,7 +114,7 @@ public interface ReactiveMutateInByIdOperation {
 		 * Type-safe variant of {@link #withInsertPaths(String...)} using property paths.
 		 * @since 6.1
 		 */
-		default MutateInByIdWithPaths<T> withInsertPaths(TypedPropertyPath<?, ?>... insertPaths) {
+		default MutateInByIdWithPaths<T> withInsertPaths(TypedPropertyPath<T, ?>... insertPaths) {
 			return withInsertPaths(Arrays.stream(insertPaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 
@@ -122,7 +122,7 @@ public interface ReactiveMutateInByIdOperation {
 		 * Type-safe variant of {@link #withUpsertPaths(String...)} using property paths.
 		 * @since 6.1
 		 */
-		default MutateInByIdWithPaths<T> withUpsertPaths(TypedPropertyPath<?, ?>... upsertPaths) {
+		default MutateInByIdWithPaths<T> withUpsertPaths(TypedPropertyPath<T, ?>... upsertPaths) {
 			return withUpsertPaths(Arrays.stream(upsertPaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 
@@ -130,7 +130,7 @@ public interface ReactiveMutateInByIdOperation {
 		 * Type-safe variant of {@link #withReplacePaths(String...)} using property paths.
 		 * @since 6.1
 		 */
-		default MutateInByIdWithPaths<T> withReplacePaths(TypedPropertyPath<?, ?>... replacePaths) {
+		default MutateInByIdWithPaths<T> withReplacePaths(TypedPropertyPath<T, ?>... replacePaths) {
 			return withReplacePaths(Arrays.stream(replacePaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 	}

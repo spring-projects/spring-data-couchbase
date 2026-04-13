@@ -107,7 +107,7 @@ public interface ExecutableMutateInByIdOperation {
 		 * @since 6.1
 		 */
 		@SuppressWarnings("unchecked")
-		default MutateInByIdWithPaths<T> withRemovePaths(TypedPropertyPath<?, ?>... removePaths) {
+		default MutateInByIdWithPaths<T> withRemovePaths(TypedPropertyPath<T, ?>... removePaths) {
 			return withRemovePaths(Arrays.stream(removePaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 
@@ -116,7 +116,7 @@ public interface ExecutableMutateInByIdOperation {
 		 * @since 6.1
 		 */
 		@SuppressWarnings("unchecked")
-		default MutateInByIdWithPaths<T> withInsertPaths(TypedPropertyPath<?, ?>... insertPaths) {
+		default MutateInByIdWithPaths<T> withInsertPaths(TypedPropertyPath<T, ?>... insertPaths) {
 			return withInsertPaths(Arrays.stream(insertPaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 
@@ -125,7 +125,7 @@ public interface ExecutableMutateInByIdOperation {
 		 * @since 6.1
 		 */
 		@SuppressWarnings("unchecked")
-		default MutateInByIdWithPaths<T> withUpsertPaths(TypedPropertyPath<?, ?>... upsertPaths) {
+		default MutateInByIdWithPaths<T> withUpsertPaths(TypedPropertyPath<T, ?>... upsertPaths) {
 			return withUpsertPaths(Arrays.stream(upsertPaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 
@@ -134,7 +134,7 @@ public interface ExecutableMutateInByIdOperation {
 		 * @since 6.1
 		 */
 		@SuppressWarnings("unchecked")
-		default MutateInByIdWithPaths<T> withReplacePaths(TypedPropertyPath<?, ?>... replacePaths) {
+		default MutateInByIdWithPaths<T> withReplacePaths(TypedPropertyPath<T, ?>... replacePaths) {
 			return withReplacePaths(Arrays.stream(replacePaths).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 	}

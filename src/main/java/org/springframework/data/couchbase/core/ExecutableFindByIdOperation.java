@@ -133,7 +133,7 @@ public interface ExecutableFindByIdOperation {
 		 * @since 6.1
 		 */
 		@SuppressWarnings("unchecked")
-		default FindByIdInScope<T> project(TypedPropertyPath<?, ?>... fields) {
+		default FindByIdInScope<T> project(TypedPropertyPath<T, ?>... fields) {
 			return project(Arrays.stream(fields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 		}
 	}
