@@ -37,6 +37,11 @@ import com.couchbase.client.java.search.SearchScanConsistency;
  * Supports positional parameter substitution ({@code ?0}, {@code ?1}, etc.) in the query string.
  * Supports {@link Pageable} parameters for limit/skip pagination.
  * Supports {@link org.springframework.data.couchbase.repository.ScanConsistency} for FTS scan consistency.
+ * <p>
+ * {@link org.springframework.data.domain.Page} and {@link org.springframework.data.domain.Slice} return types are
+ * <em>not</em> supported on reactive search methods. Use the imperative repository or the reactive template API
+ * ({@link org.springframework.data.couchbase.core.ReactiveFindBySearchOperation.TerminatingFindBySearch#result()})
+ * if you need total row counts alongside entities.
  *
  * @author Emilien Bevierre
  * @since 6.2
@@ -86,6 +91,13 @@ public class ReactiveSearchBasedCouchbaseQuery implements RepositoryQuery {
 	}
 
 	private Object executeDependingOnType(ParametersParameterAccessor accessor, SearchRequest request) {
+		if (method.isPageQuery() || method.isSliceQuery()) {
+			throw new UnsupportedOperationException(
+					"Page and Slice return types are not supported for reactive @Search repository methods. "
+							+ "Use the imperative repository for pagination, or the reactive template API "
+							+ "(ReactiveCouchbaseOperations.findBySearch(...).result()) to access total rows.");
+		}
+
 		ReactiveFindBySearchOperation.FindBySearchWithQuery<?> queryOp = createQueryOperation(accessor, true);
 
 		if (method.isCountQuery()) {

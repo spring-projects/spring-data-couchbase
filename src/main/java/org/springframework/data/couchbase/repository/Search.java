@@ -30,7 +30,18 @@ import org.springframework.data.annotation.QueryAnnotation;
  * The FTS index name must be specified via {@link SearchIndex} on the method or entity class.
  * <p>
  * Supports positional parameter placeholders ({@code ?0}, {@code ?1}, etc.) which are replaced with method argument
- * values at execution time. Example:
+ * values at execution time.
+ * <p>
+ * <strong>Parameter binding semantics (injection considerations):</strong> String and {@link Enum} values are always
+ * emitted as quoted FTS phrases ({@code "..."}), with embedded {@code "} and {@code \} escaped. This prevents a
+ * parameter value from breaking out of its phrase context and injecting FTS operators ({@code AND}, {@code OR},
+ * {@code :}, {@code *}, field selectors, etc.). {@link Number} and {@link Boolean} values are emitted verbatim so they
+ * remain usable with range operators (e.g. {@code rating:>=?0}); their types are validated, so no operator injection
+ * is possible. Because string parameters are always phrase-quoted, there is no way to pass a <em>raw</em> FTS term or
+ * operator through a placeholder. Construct a {@link com.couchbase.client.java.search.SearchRequest} and use the
+ * template API ({@code CouchbaseOperations.findBySearch(...)}) if you need that.
+ * <p>
+ * Example:
  * <pre>
  * &#64;Search("description:pool AND city:\"San Francisco\"")
  * &#64;SearchIndex("hotel-search-index")

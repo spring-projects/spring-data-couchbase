@@ -36,6 +36,10 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.Search;
 import org.springframework.data.couchbase.repository.SearchIndex;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
@@ -94,6 +98,20 @@ class ReactiveSearchBasedCouchbaseQueryTests {
 	}
 
 	@Test
+	void rejectsPageReturnTypeAtConstruction() {
+		Throwable thrown = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
+				() -> createQueryMethod("searchPaged", "match", PageRequest.of(0, 10)));
+		org.junit.jupiter.api.Assertions.assertInstanceOf(InvalidDataAccessApiUsageException.class, thrown.getCause());
+	}
+
+	@Test
+	void rejectsSliceReturnTypeAtConstruction() {
+		Throwable thrown = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
+				() -> createQueryMethod("searchSliced", "match", PageRequest.of(0, 10)));
+		org.junit.jupiter.api.Assertions.assertInstanceOf(InvalidDataAccessApiUsageException.class, thrown.getCause());
+	}
+
+	@Test
 	void executeRejectsSpringSortParameters() {
 		ReactiveSearchBasedCouchbaseQuery query = new ReactiveSearchBasedCouchbaseQuery(
 				createQueryMethod("searchSorted", "match", Sort.by("firstname")),
@@ -117,6 +135,14 @@ class ReactiveSearchBasedCouchbaseQueryTests {
 		@Search("?0")
 		@SearchIndex("test-index")
 		Flux<User> searchSorted(String query, Sort sort);
+
+		@Search("?0")
+		@SearchIndex("test-index")
+		Mono<Page<User>> searchPaged(String query, Pageable pageable);
+
+		@Search("?0")
+		@SearchIndex("test-index")
+		Mono<Slice<User>> searchSliced(String query, Pageable pageable);
 	}
 
 	interface NameOnly {

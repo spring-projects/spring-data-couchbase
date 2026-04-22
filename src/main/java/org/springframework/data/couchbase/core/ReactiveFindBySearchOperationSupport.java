@@ -104,7 +104,7 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 
 		@Override
 		public TerminatingFindBySearch<T> matching(SearchRequest searchRequest) {
-			Assert.notNull(searchRequest, "SearchRequest must not be null!");
+			Assert.notNull(searchRequest, "SearchRequest must not be null");
 			return new ReactiveFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
 					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets,
 					fields, limitSkip, support);
@@ -120,7 +120,7 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 
 		@Override
 		public <R> FindBySearchWithFields<R> as(final Class<R> returnType) {
-			Assert.notNull(returnType, "returnType must not be null!");
+			Assert.notNull(returnType, "returnType must not be null");
 			return new ReactiveFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
 					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets,
 					fields, limitSkip, support);
@@ -316,8 +316,11 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 		}
 
 		/**
-		 * Hydrates a SearchRow into an entity via KV GET, silently skipping documents that have been
+		 * Hydrates a SearchRow into an entity via KV GET, skipping documents that have been
 		 * deleted between the FTS index update and the KV fetch (stale index entries).
+		 * <p>
+		 * Misses are logged at WARN so operators can detect index staleness; persistent or high-volume
+		 * misses typically indicate an out-of-sync FTS index.
 		 */
 		private Mono<T> hydrateRow(SearchRow row) {
 			return template.findById(returnType)
@@ -325,9 +328,8 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 					.inCollection(collection)
 					.one(row.id())
 					.onErrorResume(com.couchbase.client.core.error.DocumentNotFoundException.class, ex -> {
-						if (LOG.isDebugEnabled()) {
-							LOG.debug("Skipping stale FTS result for document id '{}': document not found in KV", row.id());
-						}
+						LOG.warn("Skipping stale FTS result for document id '{}': document not found in KV "
+								+ "(index '{}' may be out of sync)", row.id(), indexName);
 						return Mono.empty();
 					});
 		}
