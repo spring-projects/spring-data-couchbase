@@ -15,10 +15,15 @@
  */
 package org.springframework.data.couchbase.core.support;
 
+import java.util.Arrays;
+
+import org.springframework.data.core.TypedPropertyPath;
+
 /**
  * Interface for operations that take distinct fields
  *
  * @author Michael Reiche
+ * @author Emilien Bevierre
  * @param <T> - the entity class
  */
 public interface WithDistinct<T> {
@@ -28,4 +33,15 @@ public interface WithDistinct<T> {
 	 * @param distinctFields - distinct fields
 	 */
 	Object distinct(String[] distinctFields);
+
+	/**
+	 * Type-safe variant of {@link #distinct(String[])} using property paths.
+	 *
+	 * @param distinctFields the property paths to use as distinct fields.
+	 * @since 6.1
+	 */
+    @SuppressWarnings("unchecked")
+	default Object distinct(TypedPropertyPath<T, ?>... distinctFields) {
+		return distinct(Arrays.stream(distinctFields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+	}
 }

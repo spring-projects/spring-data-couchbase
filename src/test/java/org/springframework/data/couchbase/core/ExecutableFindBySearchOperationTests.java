@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.data.core.TypedPropertyPath;
 
 import com.couchbase.client.java.search.HighlightStyle;
 import com.couchbase.client.java.search.SearchOptions;
@@ -103,5 +104,21 @@ class ExecutableFindBySearchOperationTests {
 		// Verify the default method signature exists and provides the right HighlightStyle
 		// This is a compile-time check -- the default highlight method delegates to withHighlight(SERVER_DEFAULT, fields)
 		assertNotNull(HighlightStyle.SERVER_DEFAULT);
+	}
+
+	@Test
+	void typedPropertyReferenceOverloadsAreDeclaredOnInterfaces() throws Exception {
+		assertNotNull(ExecutableFindBySearchOperation.FindBySearchWithSort.class
+				.getMethod("withSort", TypedPropertyPath.class, TypedPropertyPath[].class));
+		assertNotNull(ExecutableFindBySearchOperation.FindBySearchWithHighlight.class
+				.getMethod("withHighlight", HighlightStyle.class, TypedPropertyPath.class, TypedPropertyPath[].class));
+		assertNotNull(ExecutableFindBySearchOperation.FindBySearchWithFields.class
+				.getMethod("withFields", TypedPropertyPath.class, TypedPropertyPath[].class));
+		assertNotNull(ReactiveFindBySearchOperation.FindBySearchWithSort.class
+				.getMethod("withSort", TypedPropertyPath.class, TypedPropertyPath[].class));
+		assertNotNull(ReactiveFindBySearchOperation.FindBySearchWithHighlight.class
+				.getMethod("withHighlight", HighlightStyle.class, TypedPropertyPath.class, TypedPropertyPath[].class));
+		assertNotNull(ReactiveFindBySearchOperation.FindBySearchWithFields.class
+				.getMethod("withFields", TypedPropertyPath.class, TypedPropertyPath[].class));
 	}
 }
