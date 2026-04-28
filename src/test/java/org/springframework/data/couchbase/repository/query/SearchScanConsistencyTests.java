@@ -73,9 +73,10 @@ class SearchScanConsistencyTests {
 	}
 
 	@Test
-	void searchScanConsistencyAnnotationValueAttribute() {
+	void searchScanConsistencyAnnotationValueAttribute() throws NoSuchMethodException {
 		// Verify the search attribute exists on the ScanConsistency annotation
-		ScanConsistency annotation = TestScanConsistencyRepository.class.getMethods()[0].getAnnotation(ScanConsistency.class);
+		ScanConsistency annotation = TestScanConsistencyRepository.class.getMethod("searchWithConsistency")
+				.getAnnotation(ScanConsistency.class);
 		// Just verify the annotation type has the search() attribute
 		assertDoesNotThrow(() -> ScanConsistency.class.getMethod("search"));
 	}
