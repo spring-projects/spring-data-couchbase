@@ -15,19 +15,21 @@
  */
 package org.springframework.data.couchbase.repository;
 
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
+import com.couchbase.client.java.query.QueryScanConsistency;
+import com.couchbase.client.java.search.SearchScanConsistency;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
-import com.couchbase.client.java.query.QueryScanConsistency;
-
 /**
  * Scan Consistency Annotation
  *
  * @author Michael Reiche
+ * @author Emilien Bevierre
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE })
@@ -47,5 +49,12 @@ public @interface ScanConsistency {
 	 * @return the scan consistency configured, defaults to not bounded.
 	 */
 	AnalyticsScanConsistency analytics() default AnalyticsScanConsistency.NOT_BOUNDED;
+
+	/**
+	 * Specifies a custom scan consistency for FTS (Full-Text Search) queries.
+	 *
+	 * @return the scan consistency configured, defaults to not bounded.
+	 */
+	SearchScanConsistency search() default SearchScanConsistency.NOT_BOUNDED;
 
 }
