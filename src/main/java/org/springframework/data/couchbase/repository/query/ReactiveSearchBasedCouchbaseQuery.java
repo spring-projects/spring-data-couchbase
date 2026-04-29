@@ -15,13 +15,13 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveFindBySearchOperation;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
-import org.springframework.data.repository.util.ReactiveWrapperConverters;
 import org.springframework.util.Assert;
 
 import org.springframework.data.couchbase.repository.Search;
@@ -30,6 +30,9 @@ import org.springframework.data.couchbase.repository.SearchIndex;
 import com.couchbase.client.java.search.SearchQuery;
 import com.couchbase.client.java.search.SearchRequest;
 import com.couchbase.client.java.search.SearchScanConsistency;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Reactive {@link RepositoryQuery} implementation for FTS {@link Search}-annotated methods.
@@ -73,16 +76,21 @@ public class ReactiveSearchBasedCouchbaseQuery implements RepositoryQuery {
 	public Object execute(Object[] parameters) {
 		ReactiveCouchbaseParameterAccessor accessor = new ReactiveCouchbaseParameterAccessor(method, parameters);
 
-		return accessor.resolveParameters().flatMapMany(resolvedAccessor -> {
-			ResultProcessor processor = method.getResultProcessor().withDynamicProjection(resolvedAccessor);
-			SearchRepositoryQuerySupport.validateSort(resolvedAccessor);
+		if (method.isCollectionQuery()) {
+			return accessor.resolveParameters().flatMapMany(resolvedAccessor -> Flux.from(doExecute(resolvedAccessor)));
+		}
+		return accessor.resolveParameters().flatMap(resolvedAccessor -> Mono.from(doExecute(resolvedAccessor)));
+	}
 
-			String resolvedQuery = SearchBasedCouchbaseQuery.resolveParameters(searchQueryTemplate, resolvedAccessor);
-			SearchRequest request = SearchRequest.create(SearchQuery.queryString(resolvedQuery));
-			Object result = executeDependingOnType(resolvedAccessor, request);
+	private Publisher<?> doExecute(ParametersParameterAccessor resolvedAccessor) {
+		ResultProcessor processor = method.getResultProcessor().withDynamicProjection(resolvedAccessor);
+		SearchRepositoryQuerySupport.validateSort(resolvedAccessor);
 
-			return ReactiveWrapperConverters.toWrapper(processor.processResult(result), reactor.core.publisher.Flux.class);
-		});
+		String resolvedQuery = SearchBasedCouchbaseQuery.resolveParameters(searchQueryTemplate, resolvedAccessor);
+		SearchRequest request = SearchRequest.create(SearchQuery.queryString(resolvedQuery));
+		Object result = executeDependingOnType(resolvedAccessor, request);
+
+		return (Publisher<?>) processor.processResult(result);
 	}
 
 	@Override

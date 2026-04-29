@@ -15,15 +15,15 @@
  */
 package org.springframework.data.couchbase.repository;
 
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
+import com.couchbase.client.java.query.QueryScanConsistency;
+import com.couchbase.client.java.search.SearchScanConsistency;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
-import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.client.java.search.SearchScanConsistency;
 
 /**
  * Scan Consistency Annotation
