@@ -48,6 +48,12 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 	private final ReactiveCouchbaseTemplate template;
 	private static final Logger LOG = LoggerFactory.getLogger(ReactiveFindBySearchOperationSupport.class);
 
+	/**
+	 * Limit applied when neither {@code withLimit(...)} nor {@code withOptions(...)} is used. Without an explicit size
+	 * the FTS service returns only its default of 10 hits, which would silently truncate {@code all()} results.
+	 */
+	static final int DEFAULT_LIMIT = 10_000;
+
 	public ReactiveFindBySearchOperationSupport(final ReactiveCouchbaseTemplate template) {
 		this.template = template;
 	}
@@ -223,7 +229,7 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 				return TransactionalSupport.verifyNotInTransaction("findBySearch")
 						.thenMany(executeSearch()
 								.flatMapMany(ReactiveSearchResult::rows))
-						.concatMap(row -> hydrateRow(row))
+						.flatMapSequential(this::hydrateRow)
 						.onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -240,9 +246,10 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 				Assert.notNull(indexName, "Index name must be specified via withIndex()");
 				Assert.notNull(searchRequest, "SearchRequest must be specified via matching()");
 
+				// rows must be drained before the SDK emits the metadata trailer, even with limit 0
 				return TransactionalSupport.verifyNotInTransaction("findBySearch")
-						.then(executeSearch())
-						.flatMap(ReactiveSearchResult::metaData)
+						.then(executeSearch(true))
+						.flatMap(result -> result.rows().then(result.metaData()))
 						.map(metaData -> metaData.metrics().totalRows())
 						.onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
@@ -309,7 +316,7 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 						java.util.Map<String, SearchFacetResult> facetResults = tuple.getT3();
 
 						return Flux.fromIterable(searchRows)
-								.concatMap(row -> hydrateRow(row))
+								.flatMapSequential(this::hydrateRow)
 								.collectList()
 								.map(entities -> new SearchResult<>(entities, searchRows, metaData, facetResults));
 					});
@@ -323,19 +330,24 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 		 * misses typically indicate an out-of-sync FTS index.
 		 */
 		private Mono<T> hydrateRow(SearchRow row) {
+			// findById already maps DocumentNotFoundException to an empty Mono, so misses surface as emptiness
 			return template.findById(returnType)
 					.inScope(scope)
 					.inCollection(collection)
 					.one(row.id())
-					.onErrorResume(com.couchbase.client.core.error.DocumentNotFoundException.class, ex -> {
+					.switchIfEmpty(Mono.defer(() -> {
 						LOG.warn("Skipping stale FTS result for document id '{}': document not found in KV "
 								+ "(index '{}' may be out of sync)", row.id(), indexName);
 						return Mono.empty();
-					});
+					}));
 		}
 
 		private Mono<ReactiveSearchResult> executeSearch() {
-			SearchOptions opts = buildSearchOptions();
+			return executeSearch(false);
+		}
+
+		private Mono<ReactiveSearchResult> executeSearch(boolean metadataOnly) {
+			SearchOptions opts = buildSearchOptions(metadataOnly);
 			if (scope != null) {
 				return template.getCouchbaseClientFactory()
 						.withScope(scope).getScope().reactive()
@@ -347,8 +359,19 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 			}
 		}
 
-		private SearchOptions buildSearchOptions() {
-			SearchOptions opts = options != null ? options : SearchOptions.searchOptions();
+		private SearchOptions buildSearchOptions(boolean metadataOnly) {
+			if (options != null) {
+				if (hasFluentOptions()) {
+					throw new IllegalArgumentException("withOptions() cannot be combined with withConsistency(), withSort(), "
+							+ "withHighlight(), withFacets(), withFields(), withLimit() or withSkip(); "
+							+ "set those directly on the SearchOptions instead");
+				}
+				if (collection != null) {
+					options.collections(collection);
+				}
+				return options;
+			}
+			SearchOptions opts = SearchOptions.searchOptions();
 			if (scanConsistency != null) {
 				opts.scanConsistency(scanConsistency);
 			}
@@ -371,15 +394,24 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 			if (fields != null && fields.length > 0) {
 				opts.fields(fields);
 			}
-			if (limitSkip != null) {
-				if (limitSkip[0] != null) {
+			if (metadataOnly) {
+				opts.limit(0);
+			} else {
+				if (limitSkip != null && limitSkip[0] != null) {
 					opts.limit(limitSkip[0]);
+				} else {
+					opts.limit(DEFAULT_LIMIT);
 				}
-				if (limitSkip[1] != null) {
+				if (limitSkip != null && limitSkip[1] != null) {
 					opts.skip(limitSkip[1]);
 				}
 			}
 			return opts;
+		}
+
+		private boolean hasFluentOptions() {
+			return scanConsistency != null || (sort != null && sort.length > 0) || highlightStyle != null
+					|| (facets != null && !facets.isEmpty()) || (fields != null && fields.length > 0) || limitSkip != null;
 		}
 	}
 }

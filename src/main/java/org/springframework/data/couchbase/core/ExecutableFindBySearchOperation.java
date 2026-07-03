@@ -91,6 +91,9 @@ public interface ExecutableFindBySearchOperation {
 
 		/**
 		 * Get all matching elements, hydrated as entities via KV GET.
+		 * <p>
+		 * If no limit is specified via {@code withLimit(...)} or {@code withOptions(...)}, a default limit of 10,000 is
+		 * applied (the FTS service would otherwise return only its default of 10 hits).
 		 *
 		 * @return never {@literal null}.
 		 */

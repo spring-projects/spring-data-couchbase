@@ -29,6 +29,7 @@ import org.springframework.data.couchbase.core.convert.translation.JacksonTransl
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -55,7 +56,7 @@ import reactor.test.StepVerifier;
  * @author Emilien Bevierre
  * @since 6.2
  */
-@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+@IgnoreWhen(clusterTypes = ClusterType.MOCKED, missesCapabilities = Capabilities.SEARCH)
 class ReactiveSearchRepositoryFtsIntegrationTests extends JavaIntegrationTests {
 
 	private static final String INDEX_NAME = "sd-fts-airport-idx";

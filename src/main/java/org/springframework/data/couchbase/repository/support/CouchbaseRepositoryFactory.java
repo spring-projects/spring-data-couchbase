@@ -168,6 +168,10 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
 
 			if (queryMethod.hasSearchAnnotation()) {
+				if (queryMethod.hasN1qlAnnotation()) {
+					throw new IllegalArgumentException(
+							"Method " + method + " must not be annotated with both @Search and @Query");
+				}
 				return new SearchBasedCouchbaseQuery(queryMethod, couchbaseOperations);
 			} else if (queryMethod.hasN1qlAnnotation()) {
 				return new StringBasedCouchbaseQuery(queryMethod, couchbaseOperations,

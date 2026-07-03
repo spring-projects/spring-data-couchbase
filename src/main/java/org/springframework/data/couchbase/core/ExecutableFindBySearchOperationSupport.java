@@ -120,7 +120,11 @@ public class ExecutableFindBySearchOperationSupport implements ExecutableFindByS
 
 		@Override
 		public long count() {
-			return reactiveSupport.count().block();
+			Long count = reactiveSupport.count().block();
+			if (count == null) {
+				throw new CouchbaseQueryExecutionException("search count query did not return a count, index: " + indexName);
+			}
+			return count;
 		}
 
 		@Override

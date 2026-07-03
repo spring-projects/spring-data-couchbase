@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -51,7 +52,7 @@ import com.couchbase.client.java.search.result.SearchRow;
  *
  * @since 6.2
  */
-@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+@IgnoreWhen(clusterTypes = ClusterType.MOCKED, missesCapabilities = Capabilities.SEARCH)
 @SpringJUnitConfig(Config.class)
 @DirtiesContext
 class CouchbaseTemplateSearchIntegrationTests extends JavaIntegrationTests {
@@ -341,16 +342,13 @@ class CouchbaseTemplateSearchIntegrationTests extends JavaIntegrationTests {
 				cluster.searchQuery(indexName, SearchQuery.queryString("*"));
 				return;
 			} catch (Exception ex) {
-				if (i < maxRetries - 1 && (ex.getMessage().contains("no planPIndexes")
-						|| ex.getMessage().contains("pindex_consistency")
-						|| ex.getMessage().contains("pindex not available")
-						|| ex.getMessage().contains("index not found"))) {
-					sleepMs(2000);
-					continue;
-				}
-				if (i >= maxRetries - 1) {
+				String msg = ex.getMessage() != null ? ex.getMessage() : "";
+				boolean retryable = msg.contains("no planPIndexes") || msg.contains("pindex_consistency")
+						|| msg.contains("pindex not available") || msg.contains("index not found");
+				if (!retryable || i >= maxRetries - 1) {
 					throw new RuntimeException("FTS index " + indexName + " did not become ready in time", ex);
 				}
+				sleepMs(2000);
 			}
 		}
 	}

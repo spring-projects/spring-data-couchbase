@@ -32,6 +32,7 @@ import org.springframework.data.couchbase.core.convert.translation.JacksonTransl
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.Scope;
+import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -58,7 +59,7 @@ import com.couchbase.client.java.search.sort.SearchSort;
  * @author Emilien Bevierre
  * @since 6.2
  */
-@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+@IgnoreWhen(clusterTypes = ClusterType.MOCKED, missesCapabilities = Capabilities.SEARCH)
 class CouchbaseTemplateFtsIntegrationTests extends JavaIntegrationTests {
 
 	private static final String INDEX_NAME = "sd-fts-airport-idx";

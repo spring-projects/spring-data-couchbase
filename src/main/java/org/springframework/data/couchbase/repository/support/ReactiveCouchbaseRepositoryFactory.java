@@ -157,6 +157,10 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 					mappingContext);
 
 			if (queryMethod.hasSearchAnnotation()) {
+				if (queryMethod.hasN1qlAnnotation()) {
+					throw new IllegalArgumentException(
+							"Method " + method + " must not be annotated with both @Search and @Query");
+				}
 				return new ReactiveSearchBasedCouchbaseQuery(queryMethod, couchbaseOperations);
 			} else if (queryMethod.hasN1qlAnnotation()) {
 				return new ReactiveStringBasedCouchbaseQuery(queryMethod, couchbaseOperations,
