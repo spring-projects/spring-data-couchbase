@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.util.CollectionUtils;
@@ -39,6 +40,7 @@ import com.couchbase.client.java.json.JsonValue;
  * @author Michael Reiche
  * @author Mauro Monti
  * @author Shubham Mishra
+ * @author Emilien Bevierre
  */
 public class QueryCriteria implements QueryCriteriaDefinition {
 
@@ -88,6 +90,18 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	 */
 	public static QueryCriteria where(N1QLExpression key) {
 		return new QueryCriteria(null, key, null, null);
+	}
+
+	/**
+	 * Static factory method to create a Criteria using a type-safe property path. Accepts method references
+	 * (e.g. {@code Person::getFirstname}) as well as composed paths
+	 * (e.g. {@code PropertyPath.of(Person::getAddress).then(Address::getCity)}).
+	 *
+	 * @param propertyPath the type-safe property path.
+	 * @since 6.1
+	 */
+	public static <T, P> QueryCriteria where(TypedPropertyPath<T, P> propertyPath) {
+		return where(propertyPath.toDotPath());
 	}
 
 	// wrap criteria (including the criteriaChain) in a new QueryCriteria and set the queryChain of the original criteria
@@ -148,6 +162,17 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.AND);
 	}
 
+	/**
+	 * Chain a Criteria using AND with a type-safe property path. Accepts method references
+	 * (e.g. {@code Person::getFirstname}) as well as composed paths.
+	 *
+	 * @param propertyPath the type-safe property path.
+	 * @since 6.1
+	 */
+	public <T, P> QueryCriteria and(TypedPropertyPath<T, P> propertyPath) {
+		return and(propertyPath.toDotPath());
+	}
+
 	public QueryCriteria and(QueryCriteria criteria) {
 		checkAndAddToCriteriaChain();
 		QueryCriteria newThis = wrap(this);
@@ -181,6 +206,17 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	public QueryCriteria or(N1QLExpression key) {
 		// this.criteriaChain.getLast().setChainOperator(ChainOperator.OR);
 		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.OR);
+	}
+
+	/**
+	 * Chain a Criteria using OR with a type-safe property path. Accepts method references
+	 * (e.g. {@code Person::getFirstname}) as well as composed paths.
+	 *
+	 * @param propertyPath the type-safe property path.
+	 * @since 6.1
+	 */
+	public <T, P> QueryCriteria or(TypedPropertyPath<T, P> propertyPath) {
+		return or(propertyPath.toDotPath());
 	}
 
 	public QueryCriteria or(QueryCriteria criteria) {

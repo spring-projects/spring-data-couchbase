@@ -19,8 +19,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
@@ -36,6 +38,7 @@ import com.couchbase.client.java.kv.GetOptions;
  *
  * @author Christoph Strobl
  * @author Tigran Babloyan
+ * @author Emilien Bevierre
  * @since 2.0
  */
 public interface ReactiveFindByIdOperation {
@@ -125,6 +128,17 @@ public interface ReactiveFindByIdOperation {
 		 * @param fields the projected fields to load.
 		 */
 		FindByIdInCollection<T> project(String... fields);
+
+		/**
+		 * Type-safe variant of {@link #project(String...)} using property paths.
+		 *
+		 * @param fields the property paths to project.
+		 * @since 6.1
+		 */
+		@SuppressWarnings("unchecked")
+		default FindByIdInCollection<T> project(TypedPropertyPath<T, ?>... fields) {
+			return project(Arrays.stream(fields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
+		}
 
 	}
 
