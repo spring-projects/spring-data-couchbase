@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.core.TypedPropertyPath;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -204,6 +205,35 @@ public class ReactiveMutateInByIdOperationSupport implements ReactiveMutateInByI
 			Assert.notNull(replacePaths, "replacePaths path must not be null.");
 			return new ReactiveMutateInByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support, removePaths, upsertPaths, insertPaths, Arrays.asList(replacePaths), provideCas);
+		}
+
+
+		@Override
+		@SafeVarargs
+		// maps property references to stored field names (honoring @Field aliases) via the converter
+		public final MutateInByIdWithPaths<T> withRemovePaths(TypedPropertyPath<T, ?>... removePaths) {
+			return withRemovePaths(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), removePaths));
+		}
+
+		@Override
+		@SafeVarargs
+		// maps property references to stored field names (honoring @Field aliases) via the converter
+		public final MutateInByIdWithPaths<T> withUpsertPaths(TypedPropertyPath<T, ?>... upsertPaths) {
+			return withUpsertPaths(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), upsertPaths));
+		}
+
+		@Override
+		@SafeVarargs
+		// maps property references to stored field names (honoring @Field aliases) via the converter
+		public final MutateInByIdWithPaths<T> withInsertPaths(TypedPropertyPath<T, ?>... insertPaths) {
+			return withInsertPaths(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), insertPaths));
+		}
+
+		@Override
+		@SafeVarargs
+		// maps property references to stored field names (honoring @Field aliases) via the converter
+		public final MutateInByIdWithPaths<T> withReplacePaths(TypedPropertyPath<T, ?>... replacePaths) {
+			return withReplacePaths(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), replacePaths));
 		}
 
 		@Override

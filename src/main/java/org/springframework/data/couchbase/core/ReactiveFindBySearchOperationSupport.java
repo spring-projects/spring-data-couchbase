@@ -189,7 +189,7 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 		@Override
 		public <P> FindBySearchWithSkip<T> withSort(TypedPropertyPath<P, ?> property,
 				TypedPropertyPath<P, ?>... additionalProperties) {
-			return withSort(SearchPropertyPathSupport.toSearchSorts(template.getConverter(), property, additionalProperties));
+			return withSort(PropertyPathSupport.toSearchSorts(template.getConverter(), property, additionalProperties));
 		}
 
 		@Override
@@ -203,7 +203,7 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 		public <P> FindBySearchWithSort<T> withHighlight(HighlightStyle style, TypedPropertyPath<P, ?> field,
 				TypedPropertyPath<P, ?>... additionalFields) {
 			return withHighlight(style,
-					SearchPropertyPathSupport.getMappedFieldPaths(template.getConverter(), field, additionalFields));
+					PropertyPathSupport.getMappedFieldPaths(template.getConverter(), field, additionalFields));
 		}
 
 		@Override
@@ -223,7 +223,7 @@ public class ReactiveFindBySearchOperationSupport implements ReactiveFindBySearc
 		@Override
 		public <P> FindBySearchWithFacets<T> withFields(TypedPropertyPath<P, ?> field,
 				TypedPropertyPath<P, ?>... additionalFields) {
-			return withFields(SearchPropertyPathSupport.getMappedFieldPaths(template.getConverter(), field, additionalFields));
+			return withFields(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), field, additionalFields));
 		}
 
 		@Override

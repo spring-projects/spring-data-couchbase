@@ -16,6 +16,8 @@
 package org.springframework.data.couchbase.core.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,8 @@ import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.domain.Sort;
 
 /**
@@ -34,6 +38,46 @@ import org.springframework.data.domain.Sort;
  * @author Emilien Bevierre
  */
 class TypeSafePropertyReferenceTests {
+
+	private final MappingCouchbaseConverter converter;
+
+	TypeSafePropertyReferenceTests() {
+		CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
+		mappingContext.afterPropertiesSet();
+		this.converter = new MappingCouchbaseConverter(mappingContext);
+	}
+
+	// --- @Field alias resolution (Person.middlename is stored as "nickname") ---
+
+	@Test
+	void whereWithFieldAliasResolvesMappedName() {
+		QueryCriteria c = where(Person::getMiddlename).is("Ollie");
+		assertEquals("nickname = \"Ollie\"", c.export(null, null, converter));
+	}
+
+	@Test
+	void andOrWithFieldAliasResolvesMappedName() {
+		QueryCriteria c = where(Person::getFirstname).is("Oliver")
+				.and(Person::getMiddlename).is("Ollie")
+				.or(Person::getMiddlename).is("O");
+		assertEquals("firstname = \"Oliver\" and nickname = \"Ollie\" or nickname = \"O\"",
+				c.export(null, null, converter));
+	}
+
+	@Test
+	void whereWithoutConverterFallsBackToPropertyName() {
+		QueryCriteria c = where(Person::getMiddlename).is("Ollie");
+		assertEquals("middlename = \"Ollie\"", c.export());
+	}
+
+	@Test
+	void distinctWithFieldAliasResolvesMappedName() {
+		Query query = new Query().distinct(Person::getMiddlename);
+		String statement = query.toN1qlSelectString(converter, "b", null, null, Person.class, null, false,
+				query.getDistinctFields(), null);
+		assertTrue(statement.contains("nickname"), "expected mapped field name in: " + statement);
+		assertFalse(statement.contains("middlename"), "raw property name must not leak into: " + statement);
+	}
 
 	// --- QueryCriteria.where() ---
 

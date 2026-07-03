@@ -40,7 +40,7 @@ public interface WithDistinct<T> {
 	 * @param distinctFields the property paths to use as distinct fields.
 	 * @since 6.1
 	 */
-    @SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
 	default Object distinct(TypedPropertyPath<T, ?>... distinctFields) {
 		return distinct(Arrays.stream(distinctFields).map(TypedPropertyPath::toDotPath).toArray(String[]::new));
 	}

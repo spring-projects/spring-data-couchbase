@@ -25,9 +25,25 @@ import org.springframework.data.mapping.PersistentPropertyPath;
 
 import com.couchbase.client.java.search.sort.SearchSort;
 
-final class SearchPropertyPathSupport {
+/**
+ * Maps {@link TypedPropertyPath} property references to the stored field names, honoring {@code @Field} aliases on
+ * every segment of the path.
+ *
+ * @author Emilien Bevierre
+ * @since 6.2
+ */
+final class PropertyPathSupport {
 
-	private SearchPropertyPathSupport() {
+	private PropertyPathSupport() {
+	}
+
+	static <P> String[] getMappedFieldPaths(CouchbaseConverter converter, TypedPropertyPath<P, ?>[] properties) {
+
+		String[] fields = new String[properties.length];
+		for (int i = 0; i < properties.length; i++) {
+			fields[i] = getMappedFieldPath(converter, properties[i]);
+		}
+		return fields;
 	}
 
 	static <P> String getMappedFieldPath(CouchbaseConverter converter, TypedPropertyPath<P, ?> property) {

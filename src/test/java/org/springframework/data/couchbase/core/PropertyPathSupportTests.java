@@ -28,11 +28,11 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
 
-class SearchPropertyPathSupportTests {
+class PropertyPathSupportTests {
 
 	private final MappingCouchbaseConverter converter;
 
-	SearchPropertyPathSupportTests() {
+	PropertyPathSupportTests() {
 		CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
 		mappingContext.setInitialEntitySet(Set.of(SearchDocument.class, SearchAddress.class));
 		mappingContext.afterPropertiesSet();
@@ -42,18 +42,18 @@ class SearchPropertyPathSupportTests {
 	@Test
 	void resolvesAlternativeFieldNames() {
 		assertEquals("nickname",
-				SearchPropertyPathSupport.getMappedFieldPath(converter, PropertyPath.of(SearchDocument::getMiddlename)));
+				PropertyPathSupport.getMappedFieldPath(converter, PropertyPath.of(SearchDocument::getMiddlename)));
 	}
 
 	@Test
 	void resolvesNestedPropertyPaths() {
-		assertEquals("address.city", SearchPropertyPathSupport.getMappedFieldPath(converter,
+		assertEquals("address.city", PropertyPathSupport.getMappedFieldPath(converter,
 				PropertyPath.of(SearchDocument::getAddress).then(SearchAddress::getCity)));
 	}
 
 	@Test
 	void resolvesMultipleMappedFieldPaths() {
-		assertArrayEquals(new String[] { "nickname", "address.city" }, SearchPropertyPathSupport
+		assertArrayEquals(new String[] { "nickname", "address.city" }, PropertyPathSupport
 				.getMappedFieldPaths(converter, PropertyPath.of(SearchDocument::getMiddlename),
 						PropertyPath.of(SearchDocument::getAddress).then(SearchAddress::getCity)));
 	}
