@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.ReactiveFindBySearchOperationSupport.ReactiveFindBySearchSupport;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
@@ -190,8 +191,8 @@ public class ExecutableFindBySearchOperationSupport implements ExecutableFindByS
 		@Override
 		public FindBySearchWithQuery<T> withOptions(final SearchOptions options) {
 			return new ExecutableFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
-					scanConsistency, scope, collection, options != null ? options : this.options, sort,
-					highlightStyle, highlightFields, facets, fields, limitSkip);
+					scanConsistency, scope, collection, options != null ? options : this.options, sort, highlightStyle,
+					highlightFields, facets, fields, limitSkip);
 		}
 
 		@Override
@@ -220,10 +221,22 @@ public class ExecutableFindBySearchOperationSupport implements ExecutableFindByS
 		}
 
 		@Override
+		public <P> FindBySearchWithSkip<T> withSort(TypedPropertyPath<P, ?> property,
+				TypedPropertyPath<P, ?>... additionalProperties) {
+			return withSort(PropertyPathSupport.toSearchSorts(template.getConverter(), property, additionalProperties));
+		}
+
+		@Override
 		public FindBySearchWithSort<T> withHighlight(HighlightStyle style, String... fields) {
 			return new ExecutableFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
-					scanConsistency, scope, collection, options, sort, style, fields, facets,
-					this.fields, limitSkip);
+					scanConsistency, scope, collection, options, sort, style, fields, facets, this.fields, limitSkip);
+		}
+
+		@Override
+		public <P> FindBySearchWithSort<T> withHighlight(HighlightStyle style, TypedPropertyPath<P, ?> field,
+				TypedPropertyPath<P, ?>... additionalFields) {
+			return withHighlight(style,
+					PropertyPathSupport.getMappedFieldPaths(template.getConverter(), field, additionalFields));
 		}
 
 		@Override
@@ -238,6 +251,12 @@ public class ExecutableFindBySearchOperationSupport implements ExecutableFindByS
 			return new ExecutableFindBySearchSupport<>(template, domainType, returnType, indexName, searchRequest,
 					scanConsistency, scope, collection, options, sort, highlightStyle, highlightFields, facets,
 					fields, limitSkip);
+		}
+
+		@Override
+		public <P> FindBySearchWithFacets<T> withFields(TypedPropertyPath<P, ?> field,
+				TypedPropertyPath<P, ?>... additionalFields) {
+			return withFields(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), field, additionalFields));
 		}
 	}
 }

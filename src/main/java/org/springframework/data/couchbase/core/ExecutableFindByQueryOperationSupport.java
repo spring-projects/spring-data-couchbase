@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.core.TypedPropertyPath;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -145,6 +146,20 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, dFields, fields);
+		}
+
+		@Override
+		@SafeVarargs
+		// maps property references to stored field names (honoring @Field aliases) via the converter
+		public final FindByQueryWithProjection<T> project(TypedPropertyPath<T, ?>... fields) {
+			return project(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), fields));
+		}
+
+		@Override
+		@SafeVarargs
+		// maps property references to stored field names (honoring @Field aliases) via the converter
+		public final FindByQueryWithProjection<T> distinct(TypedPropertyPath<T, ?>... distinctFields) {
+			return distinct(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), distinctFields));
 		}
 
 		@Override

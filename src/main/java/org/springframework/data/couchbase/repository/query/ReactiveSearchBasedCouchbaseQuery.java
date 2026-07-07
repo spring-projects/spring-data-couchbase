@@ -148,7 +148,6 @@ public class ReactiveSearchBasedCouchbaseQuery implements RepositoryQuery {
 		}
 		return searchOp;
 	}
-
 	private static String resolveIndexName(ReactiveCouchbaseQueryMethod method) {
 		SearchIndex methodAnnotation = method.getAnnotation(SearchIndex.class);
 		if (methodAnnotation != null) {

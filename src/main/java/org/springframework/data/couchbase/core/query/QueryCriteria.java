@@ -24,7 +24,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.mapping.PersistentPropertyPath;
 import org.jspecify.annotations.Nullable;
 import org.springframework.util.CollectionUtils;
 
@@ -39,10 +42,16 @@ import com.couchbase.client.java.json.JsonValue;
  * @author Michael Reiche
  * @author Mauro Monti
  * @author Shubham Mishra
+ * @author Emilien Bevierre
  */
 public class QueryCriteria implements QueryCriteriaDefinition {
 
 	private N1QLExpression key;
+	/**
+	 * When the criteria was created from a {@link TypedPropertyPath}, the path is kept so the key can be resolved to the
+	 * mapped field name (honoring {@code @Field} aliases) once a converter is available at export time.
+	 */
+	private @Nullable TypedPropertyPath<?, ?> propertyPath;
 	/**
 	 * Holds the chain itself, the current operator being always the last one.
 	 */
@@ -90,15 +99,31 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return new QueryCriteria(null, key, null, null);
 	}
 
+	/**
+	 * Static factory method to create a Criteria using a type-safe property path. Accepts method references
+	 * (e.g. {@code Person::getFirstname}) as well as composed paths
+	 * (e.g. {@code PropertyPath.of(Person::getAddress).then(Address::getCity)}).
+	 *
+	 * @param propertyPath the type-safe property path.
+	 * @since 6.1
+	 */
+	public static <T, P> QueryCriteria where(TypedPropertyPath<T, P> propertyPath) {
+		QueryCriteria criteria = where(propertyPath.toDotPath());
+		criteria.propertyPath = propertyPath;
+		return criteria;
+	}
+
 	// wrap criteria (including the criteriaChain) in a new QueryCriteria and set the queryChain of the original criteria
 	// to just itself. The new query will be the value[0] of the original query.
 	private void replaceThisAsWrapperOf(QueryCriteria criteria) {
 		QueryCriteria qc = new QueryCriteria(criteria.criteriaChain, criteria.key, criteria.value, criteria.chainOperator,
 				criteria.operator, criteria.format);
+		qc.propertyPath = criteria.propertyPath;
 		criteriaChain.remove(criteria); // we replaced it with the clone
 		criteriaChain = new LinkedList<>();
 		criteriaChain.add(this);
 		key = N1QLExpression.WRAPPER();
+		propertyPath = null;
 		operator = "";
 		value = new Object[] { qc };
 		chainOperator = null;
@@ -148,6 +173,19 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.AND);
 	}
 
+	/**
+	 * Chain a Criteria using AND with a type-safe property path. Accepts method references
+	 * (e.g. {@code Person::getFirstname}) as well as composed paths.
+	 *
+	 * @param propertyPath the type-safe property path.
+	 * @since 6.1
+	 */
+	public <T, P> QueryCriteria and(TypedPropertyPath<T, P> propertyPath) {
+		QueryCriteria criteria = and(propertyPath.toDotPath());
+		criteria.propertyPath = propertyPath;
+		return criteria;
+	}
+
 	public QueryCriteria and(QueryCriteria criteria) {
 		checkAndAddToCriteriaChain();
 		QueryCriteria newThis = wrap(this);
@@ -181,6 +219,19 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	public QueryCriteria or(N1QLExpression key) {
 		// this.criteriaChain.getLast().setChainOperator(ChainOperator.OR);
 		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.OR);
+	}
+
+	/**
+	 * Chain a Criteria using OR with a type-safe property path. Accepts method references
+	 * (e.g. {@code Person::getFirstname}) as well as composed paths.
+	 *
+	 * @param propertyPath the type-safe property path.
+	 * @since 6.1
+	 */
+	public <T, P> QueryCriteria or(TypedPropertyPath<T, P> propertyPath) {
+		QueryCriteria criteria = or(propertyPath.toDotPath());
+		criteria.propertyPath = propertyPath;
+		return criteria;
 	}
 
 	public QueryCriteria or(QueryCriteria criteria) {
@@ -553,7 +604,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	 */
 	private StringBuilder exportSingle(StringBuilder sb, int[] paramIndexPtr, JsonValue parameters,
 			CouchbaseConverter converter) {
-		String fieldName = key == null ? null : key.toString(); // maybeBackTic(key);
+		String fieldName = key == null ? null : mappedFieldName(converter); // maybeBackTic(key);
 		int valueLen = value == null ? 0 : value.length;
 		Object[] v = new Object[valueLen + 2];
 		v[0] = fieldName;
@@ -575,6 +626,20 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		}
 
 		return sb;
+	}
+
+	/**
+	 * Resolves the key to the stored field name. Criteria created from a {@link TypedPropertyPath} carry Java property
+	 * names, which are translated segment-by-segment to the mapped field names (honoring {@code @Field} aliases) when a
+	 * converter is available. String-based criteria are emitted verbatim.
+	 */
+	private String mappedFieldName(CouchbaseConverter converter) {
+		if (propertyPath == null || converter == null) {
+			return key.toString();
+		}
+		PersistentPropertyPath<CouchbasePersistentProperty> path = converter.getMappingContext()
+				.getPersistentPropertyPath(propertyPath);
+		return path.toDotPath(CouchbasePersistentProperty::getFieldName);
 	}
 
 	/**

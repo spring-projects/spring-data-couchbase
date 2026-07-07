@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.core.TypedPropertyPath;
 import static com.couchbase.client.java.kv.GetAndLockOptions.getAndLockOptions;
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
 import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
@@ -208,6 +209,13 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			Assert.notNull(fields, "Fields must not be null");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields),
 					expiry, lockDuration, support);
+		}
+
+		@Override
+		@SafeVarargs
+		// maps property references to stored field names (honoring @Field aliases) via the converter
+		public final FindByIdInCollection<T> project(TypedPropertyPath<T, ?>... fields) {
+			return project(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), fields));
 		}
 
 		@Override

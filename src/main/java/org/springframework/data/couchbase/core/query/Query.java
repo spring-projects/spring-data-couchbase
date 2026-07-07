@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import org.springframework.data.mapping.PersistentPropertyPath;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import static org.springframework.util.Assert.*;
 
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.data.core.TypedPropertyPath;
 import org.springframework.data.core.TypeInformation;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -47,6 +50,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Emilien Bevierre
  */
 public class Query {
 
@@ -56,6 +60,11 @@ public class Query {
 	private int limit;
 	private boolean distinct;
 	private String[] distinctFields;
+	/**
+	 * When distinct fields were given as {@link TypedPropertyPath}s, the paths are kept so they can be resolved to the
+	 * mapped field names (honoring {@code @Field} aliases) once a converter is available.
+	 */
+	private TypedPropertyPath<?, ?>[] typedDistinctFields;
 	protected Sort sort = Sort.unsorted();
 	private QueryScanConsistency queryScanConsistency;
 	private Meta meta;
@@ -77,6 +86,7 @@ public class Query {
 		this.limit = that.limit;
 		this.distinct = that.distinct;
 		this.distinctFields = that.distinctFields;
+		this.typedDistinctFields = that.typedDistinctFields;
 		this.sort = that.sort;
 		this.queryScanConsistency = that.queryScanConsistency;
 		this.meta = that.meta;
@@ -173,6 +183,20 @@ public class Query {
 	 */
 	public Query distinct(String[] distinctFields) {
 		this.distinctFields = distinctFields;
+		this.typedDistinctFields = null;
+		return this;
+	}
+
+	/**
+	 * Type-safe variant of {@link #distinct(String[])} using property references.
+	 *
+	 * @param distinctFields the property references to use as distinct fields.
+	 * @since 6.1
+	 */
+	@SafeVarargs
+	public final <T> Query distinct(TypedPropertyPath<T, ?>... distinctFields) {
+		this.distinctFields = Arrays.stream(distinctFields).map(TypedPropertyPath::toDotPath).toArray(String[]::new);
+		this.typedDistinctFields = distinctFields;
 		return this;
 	}
 
@@ -183,6 +207,20 @@ public class Query {
 	 */
 	public String[] getDistinctFields() {
 		return distinctFields;
+	}
+
+	/**
+	 * Resolves distinct fields given as {@link TypedPropertyPath}s to the stored field names (honoring {@code @Field}
+	 * aliases) using the given converter.
+	 */
+	private String[] mappedDistinctFields(CouchbaseConverter converter) {
+		String[] mapped = new String[typedDistinctFields.length];
+		for (int i = 0; i < typedDistinctFields.length; i++) {
+			PersistentPropertyPath<CouchbasePersistentProperty> path = converter.getMappingContext()
+					.getPersistentPropertyPath(typedDistinctFields[i]);
+			mapped[i] = path.toDotPath(CouchbasePersistentProperty::getFieldName);
+		}
+		return mapped;
 	}
 
 	/**
@@ -350,6 +388,10 @@ public class Query {
 	public String toN1qlSelectString(CouchbaseConverter converter, String bucketName, String scopeName,
 			String collectionName, Class domainClass, Class returnClass, boolean isCount, String[] distinctFields,
 			String[] fields) {
+		if (typedDistinctFields != null && Arrays.equals(distinctFields, this.distinctFields)) {
+			// distinct fields were given as property references; resolve them to the mapped field names
+			distinctFields = mappedDistinctFields(converter);
+		}
 		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(converter, bucketName, scopeName, collectionName,
 				domainClass, returnClass, isCount, distinctFields, fields);
 		final StringBuilder statement = new StringBuilder();
