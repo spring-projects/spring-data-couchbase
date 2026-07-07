@@ -44,6 +44,7 @@ import com.couchbase.client.java.manager.search.SearchIndex;
 import com.couchbase.client.java.search.SearchQuery;
 import com.couchbase.client.java.search.SearchRequest;
 import com.couchbase.client.java.search.facet.SearchFacet;
+import com.couchbase.client.java.search.result.SearchMetrics;
 import com.couchbase.client.java.search.result.SearchRow;
 import com.couchbase.client.java.search.sort.SearchSort;
 
@@ -96,7 +97,6 @@ class CouchbaseTemplateFtsIntegrationTests extends JavaIntegrationTests {
 
 	@AfterAll
 	public static void tearDownFtsTest() {
-		// Index is intentionally NOT dropped: re-indexing 30k+ docs on each run is too slow.
 		if (travelSampleClientFactory != null) {
 			try {
 				travelSampleClientFactory.close();
@@ -142,7 +142,7 @@ class CouchbaseTemplateFtsIntegrationTests extends JavaIntegrationTests {
 				.matching(airportSearch(SearchQuery.match("United States").field("country")))
 				.count();
 
-		assertTrue(count > 100, "Expected many US airports in travel-sample");
+		assertEquals(1747, count, "travel-sample airports matching the 'United States' analyzed query");
 	}
 
 	@Test
@@ -216,10 +216,28 @@ class CouchbaseTemplateFtsIntegrationTests extends JavaIntegrationTests {
 
 		assertNotNull(result);
 		assertEquals(3, result.entities().size(), "Should have 3 hydrated entities");
-		assertTrue(result.totalRows() > 3, "Total rows should exceed the limit");
+		assertEquals(1968, result.totalRows(), "travel-sample has 1968 airports; total rows is independent of the limit");
 		assertNotNull(result.metaData(), "Metadata should be present");
 		assertFalse(result.facets().isEmpty(), "Facet results should be present");
 		assertTrue(result.facets().containsKey("countries"));
+	}
+
+	@Test
+	void searchResultExposesMetrics() {
+		SearchResult<TsAirport> result = template.findBySearch(TsAirport.class)
+				.withIndex(INDEX_NAME)
+				.withLimit(10)
+				.matching(airportSearch(SearchQuery.match("international").field("airportname")))
+				.result();
+
+		SearchMetrics metrics = result.metaData().metrics();
+		assertEquals(20, metrics.totalRows(), "travel-sample has 20 airports named 'international'");
+		assertEquals(6.915073962015045, result.maxScore(), 1e-6, "Max BM25 score for the query");
+		assertFalse(metrics.took().isNegative(), "Execution time should not be negative");
+		assertTrue(metrics.totalPartitionCount() > 0, "Should have queried at least one partition");
+		assertEquals(metrics.totalPartitionCount(), metrics.successPartitionCount(),
+				"All partitions should have succeeded");
+		assertEquals(0, metrics.errorPartitionCount(), "No partition should have errored");
 	}
 
 	@Test
@@ -255,8 +273,6 @@ class CouchbaseTemplateFtsIntegrationTests extends JavaIntegrationTests {
 		}
 	}
 
-	// --- Domain entity for travel-sample airports ---
-
 	@Scope("inventory")
 	@Collection("airport")
 	static class TsAirport {
@@ -269,7 +285,7 @@ class CouchbaseTemplateFtsIntegrationTests extends JavaIntegrationTests {
 		String tz;
 	}
 
-	// --- Helpers ---
+	// Helpers
 
 	private static void ensureFtsIndex(Cluster cluster) {
 		com.couchbase.client.java.Scope scope = cluster.bucket(TS_BUCKET).scope("inventory");
@@ -285,7 +301,6 @@ class CouchbaseTemplateFtsIntegrationTests extends JavaIntegrationTests {
 	}
 
 	private static void waitForFtsIndex(com.couchbase.client.java.Scope scope) {
-		// Phase 1: wait for the index to be queryable
 		for (int i = 0; i < 30; i++) {
 			try {
 				scope.search(INDEX_NAME, SearchRequest.create(SearchQuery.matchAll()));
@@ -296,7 +311,7 @@ class CouchbaseTemplateFtsIntegrationTests extends JavaIntegrationTests {
 				sleepMs(2000);
 			}
 		}
-		// Phase 2: wait for documents to be indexed
+
 		for (int i = 0; i < 60; i++) {
 			try {
 				long docCount = scope.searchIndexes().getIndexedDocumentsCount(INDEX_NAME);
