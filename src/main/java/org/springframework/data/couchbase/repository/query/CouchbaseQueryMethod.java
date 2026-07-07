@@ -33,6 +33,7 @@ import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.couchbase.repository.Scope;
+import org.springframework.data.couchbase.repository.Search;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -42,6 +43,7 @@ import org.springframework.data.repository.util.ReactiveWrapperConverters;
 import org.springframework.util.StringUtils;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.java.search.SearchScanConsistency;
 
 /**
  * Represents a query method with couchbase extensions, allowing to discover if View-based query or N1QL-based query
@@ -51,6 +53,7 @@ import com.couchbase.client.core.io.CollectionIdentifier;
  * @author Simon Baslé
  * @author Oliver Gierke
  * @author Michael Reiche
+ * @author Emilien Bevierre
  */
 public class CouchbaseQueryMethod extends QueryMethod {
 
@@ -71,6 +74,15 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	 */
 	public boolean hasN1qlAnnotation() {
 		return getN1qlAnnotation() != null;
+	}
+
+	/**
+	 * If the method has a @Search annotation.
+	 *
+	 * @return true if it has the annotation, false otherwise.
+	 */
+	public boolean hasSearchAnnotation() {
+		return method.getAnnotation(Search.class) != null;
 	}
 
 	/**
@@ -194,6 +206,19 @@ public class CouchbaseQueryMethod extends QueryMethod {
 		AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass(),
 				repositoryMetadata.getRepositoryInterface(), repositoryMetadata.getDomainType() };
 		return OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE, annotated);
+	}
+
+	/**
+	 * Returns the FTS scan consistency from the {@link ScanConsistency} annotation if present, null otherwise.
+	 *
+	 * @return the FTS scan consistency, or null if not annotated.
+	 */
+	public SearchScanConsistency getSearchScanConsistency() {
+		ScanConsistency annotation = getScanConsistencyAnnotation();
+		if (annotation != null) {
+			return annotation.search();
+		}
+		return null;
 	}
 
 }

@@ -30,6 +30,7 @@ import org.springframework.data.couchbase.repository.config.RepositoryOperations
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.PartTreeCouchbaseQuery;
+import org.springframework.data.couchbase.repository.query.SearchBasedCouchbaseQuery;
 import org.springframework.data.couchbase.repository.query.StringBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
@@ -166,7 +167,13 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
 			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
 
-			if (queryMethod.hasN1qlAnnotation()) {
+			if (queryMethod.hasSearchAnnotation()) {
+				if (queryMethod.hasN1qlAnnotation()) {
+					throw new IllegalArgumentException(
+							"Method " + method + " must not be annotated with both @Search and @Query");
+				}
+				return new SearchBasedCouchbaseQuery(queryMethod, couchbaseOperations);
+			} else if (queryMethod.hasN1qlAnnotation()) {
 				return new StringBasedCouchbaseQuery(queryMethod, couchbaseOperations,
 						valueExpressionDelegate, namedQueries);
 			} else {

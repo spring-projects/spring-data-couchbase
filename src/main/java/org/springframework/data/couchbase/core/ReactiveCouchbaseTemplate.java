@@ -146,6 +146,11 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	@Override
+	public <T> ReactiveFindBySearch<T> findBySearch(Class<T> domainType) {
+		return new ReactiveFindBySearchOperationSupport(this).findBySearch(domainType);
+	}
+
+	@Override
 	public <T> ReactiveFindByQuery<T> findByQuery(Class<T> domainType) {
 		return new ReactiveFindByQueryOperationSupport(this).findByQuery(domainType);
 	}

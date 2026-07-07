@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.core.TypedPropertyPath;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
@@ -96,6 +97,13 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		public FindByIdInScope<T> project(String... fields) {
 			Assert.notEmpty(fields, "Fields must not be null.");
 			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields), expiry, lockDuration);
+		}
+
+		@Override
+		@SafeVarargs
+		// maps property references to stored field names (honoring @Field aliases) via the converter
+		public final FindByIdInScope<T> project(TypedPropertyPath<T, ?>... fields) {
+			return project(PropertyPathSupport.getMappedFieldPaths(template.getConverter(), fields));
 		}
 
 		@Override
