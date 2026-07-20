@@ -131,7 +131,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 					}
 				} else {
 					rejectInvalidTransactionalOptions();
-					return ctxOpt.get().getCore().get(makeCollectionIdentifier(rc.async()), id.toString())
+					return ctxOpt.get().getCore().getReactive(makeCollectionIdentifier(rc.async()), id.toString())
 							.flatMap(result -> support.decodeEntity(id, result.contentAsBytes(),
 									result.cas(), null, domainType, pArgs.getScope(), pArgs.getCollection(), null,
 									null));

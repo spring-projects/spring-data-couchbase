@@ -117,7 +117,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 						throw new IllegalArgumentException("cas must be supplied for tx remove");
 					}
 					CoreTransactionAttemptContext ctx = s.get().getCore();
-					Mono<CoreTransactionGetResult> gr = ctx.get(makeCollectionIdentifier(rc.async()), id.toString());
+					Mono<CoreTransactionGetResult> gr = ctx.getReactive(makeCollectionIdentifier(rc.async()), id.toString());
 
 					return gr.flatMap(getResult -> {
 						if (getResult.cas() != cas) {
@@ -125,7 +125,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 						}
 						CoreTransactionAttemptContext internal = ctx;
 						RequestSpan span = CbTracing.newSpan(internal.core().context(), TRANSACTION_OP_REMOVE, internal.span());
-						return ctx.remove(getResult, new SpanWrapper(span)).map(r -> new RemoveResult(id.toString(), 0, null));
+						return ctx.removeReactive(getResult, new SpanWrapper(span)).map(r -> new RemoveResult(id.toString(), 0, null));
 					});
 
 				}
