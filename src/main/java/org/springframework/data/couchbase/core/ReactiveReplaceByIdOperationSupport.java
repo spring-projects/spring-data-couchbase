@@ -125,7 +125,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 									CoreTransactionAttemptContext ctx = ctxOpt.get().getCore();
 									ctx.logger().info(ctx.attemptId(), "refetching %s for Spring replace",
 											DebugUtil.docId(collId, converted.getId().toString()));
-									Mono<CoreTransactionGetResult> gr = ctx.get(collId, converted.getId().toString());
+									Mono<CoreTransactionGetResult> gr = ctx.getReactive(collId, converted.getId().toString());
 
 									return gr.flatMap(getResult -> {
 										if (getResult.cas() != cas) {

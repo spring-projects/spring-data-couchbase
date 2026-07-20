@@ -209,7 +209,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 					JsonSerializer jSer = clientFactory.getCluster().environment().jsonSerializer();
 					CoreQueryOptions opts = options != null ? options.builder().build() : null;
 					return s.get().getCore()
-							.queryBlocking(statement,
+							.queryReactive(statement,
 									pArgs.getScope() == null ? null
 											: CoreQueryContext.of(rs.bucketName(), pArgs.getScope()),
 									opts, false)
@@ -278,7 +278,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 					JsonSerializer jSer = clientFactory.getCluster().environment().jsonSerializer();
 					CoreQueryOptions opts = options != null ? options.builder().build() : null;
 					return s.get().getCore()
-							.queryBlocking(statement,
+							.queryReactive(statement,
 									pArgs.getScope() == null ? null
 											: CoreQueryContext.of(rs.bucketName(), pArgs.getScope()),
 									opts, false)
