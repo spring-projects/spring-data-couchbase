@@ -20,10 +20,14 @@ import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.InvocationTargetException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +42,10 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Airline;
 import org.springframework.data.couchbase.domain.AirlineRepository;
+import org.springframework.data.couchbase.domain.AuditedImmutableEntity;
+import org.springframework.data.couchbase.domain.AuditedImmutableEntityRepository;
+import org.springframework.data.couchbase.domain.AuditedRecord;
+import org.springframework.data.couchbase.domain.AuditedRecordRepository;
 import org.springframework.data.couchbase.domain.BigAirline;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.Course;
@@ -52,6 +60,8 @@ import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.domain.UserSubmission;
 import org.springframework.data.couchbase.domain.UserSubmissionRepository;
+import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
+import org.springframework.data.couchbase.domain.time.FixedDateTimeService;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -65,6 +75,7 @@ import com.couchbase.client.java.kv.GetResult;
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Artur Kalimullin
  */
 @SpringJUnitConfig(Config.class)
 @DirtiesContext
@@ -76,8 +87,11 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@Autowired SubscriptionTokenRepository subscriptionTokenRepository;
 	@Autowired UserSubmissionRepository userSubmissionRepository;
 	@Autowired AirlineRepository airlineRepository;
+	@Autowired AuditedImmutableEntityRepository auditedImmutableEntityRepository;
+	@Autowired AuditedRecordRepository auditedRecordRepository;
 	@Autowired PersonValueRepository personValueRepository;
 	@Autowired CouchbaseTemplate couchbaseTemplate;
+	@Autowired AuditingDateTimeProvider auditingDateTimeProvider;
 
 	@BeforeEach
 	public void beforeEach() {
@@ -158,6 +172,82 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		assertTrue(found.isPresent());
 		assertEquals(personValue, found.get());
 		personValueRepository.delete(personValue);
+	}
+
+	@Test
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void saveAuditedRecord() {
+		Instant createdAt = Instant.parse("2026-08-12T09:00:00Z");
+		Instant modifiedAt = Instant.parse("2026-08-12T09:01:00Z");
+		AuditedRecord saved = null;
+		setAuditingTime(createdAt);
+
+		try {
+			saved = auditedRecordRepository.save(new AuditedRecord(null, 0, null, null, "value"));
+			AuditedRecord found = auditedRecordRepository.findById(saved.id()).orElseThrow();
+
+			assertNotNull(found.id());
+			assertNotEquals(0, found.version());
+			assertEquals(createdAt, found.createdDate());
+			assertEquals(createdAt, found.lastModifiedDate());
+
+			setAuditingTime(modifiedAt);
+			auditedRecordRepository.save(new AuditedRecord(found.id(), found.version(), found.createdDate(),
+					found.lastModifiedDate(), "updated value"));
+
+			AuditedRecord updated = auditedRecordRepository.findById(saved.id()).orElseThrow();
+			assertNotNull(updated.createdDate());
+			assertNotNull(updated.lastModifiedDate());
+			assertEquals(found.createdDate(), updated.createdDate());
+			assertEquals(modifiedAt, updated.lastModifiedDate());
+			assertNotEquals(updated.createdDate(), updated.lastModifiedDate());
+		} finally {
+			resetAuditingTime();
+			if (saved != null) {
+				auditedRecordRepository.deleteById(saved.id());
+			}
+		}
+	}
+
+	@Test
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void saveAuditedImmutableEntity() {
+		Instant createdAt = Instant.parse("2026-08-12T09:00:00Z");
+		Instant modifiedAt = Instant.parse("2026-08-12T09:01:00Z");
+		AuditedImmutableEntity saved = null;
+		setAuditingTime(createdAt);
+
+		try {
+			saved = auditedImmutableEntityRepository.save(new AuditedImmutableEntity(null, 0, null, null, "value"));
+			AuditedImmutableEntity found = auditedImmutableEntityRepository.findById(saved.getId()).orElseThrow();
+
+			assertEquals(createdAt, found.getCreatedDate());
+			assertEquals(createdAt, found.getLastModifiedDate());
+
+			setAuditingTime(modifiedAt);
+			auditedImmutableEntityRepository.save(new AuditedImmutableEntity(found.getId(), found.getVersion(),
+					found.getCreatedDate(), found.getLastModifiedDate(), "updated value"));
+
+			AuditedImmutableEntity updated = auditedImmutableEntityRepository.findById(saved.getId()).orElseThrow();
+			assertNotNull(updated.getCreatedDate());
+			assertNotNull(updated.getLastModifiedDate());
+			assertEquals(found.getCreatedDate(), updated.getCreatedDate());
+			assertEquals(modifiedAt, updated.getLastModifiedDate());
+			assertNotEquals(updated.getCreatedDate(), updated.getLastModifiedDate());
+		} finally {
+			resetAuditingTime();
+			if (saved != null) {
+				auditedImmutableEntityRepository.deleteById(saved.getId());
+			}
+		}
+	}
+
+	private void setAuditingTime(Instant time) {
+		auditingDateTimeProvider.setDateTimeService(() -> ZonedDateTime.ofInstant(time, ZoneOffset.UTC));
+	}
+
+	private void resetAuditingTime() {
+		auditingDateTimeProvider.setDateTimeService(new FixedDateTimeService());
 	}
 
 	@Test // DATACOUCH-564
