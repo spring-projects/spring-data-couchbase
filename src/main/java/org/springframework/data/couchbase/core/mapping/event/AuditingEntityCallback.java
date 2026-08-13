@@ -30,6 +30,7 @@ import org.springframework.util.Assert;
  * {@link EntityCallback} to populate auditing related fields on an entity about to be saved.
  *
  * @author Jorge Rodríguez Martín
+ * @author Artur Kalimullin
  * @since 4.2
  */
 public class AuditingEntityCallback implements BeforeConvertCallback<Object>, AfterConvertCallback<Object>, Ordered {
@@ -54,9 +55,7 @@ public class AuditingEntityCallback implements BeforeConvertCallback<Object>, Af
 	 */
 	@Override
 	public Object onBeforeConvert(Object entity, String collection) {
-		// LOG.trace("onBeforeConvert " + entity);
-		return entity; // markAudited called in AuditingEventListener.onApplicationEvent()
-										// auditingHandlerFactory.getObject().markAudited(entity);
+		return auditingHandlerFactory.getObject().markAudited(entity);
 	}
 
 	/*
