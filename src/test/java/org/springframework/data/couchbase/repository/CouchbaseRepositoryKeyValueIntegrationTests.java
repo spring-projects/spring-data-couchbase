@@ -53,6 +53,7 @@ import org.springframework.data.couchbase.domain.Library;
 import org.springframework.data.couchbase.domain.LibraryRepository;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.PersonValueRepository;
+import org.springframework.data.couchbase.domain.ReactiveAuditedRecordRepository;
 import org.springframework.data.couchbase.domain.Submission;
 import org.springframework.data.couchbase.domain.SubscriptionToken;
 import org.springframework.data.couchbase.domain.SubscriptionTokenRepository;
@@ -89,6 +90,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@Autowired AirlineRepository airlineRepository;
 	@Autowired AuditedImmutableEntityRepository auditedImmutableEntityRepository;
 	@Autowired AuditedRecordRepository auditedRecordRepository;
+	@Autowired ReactiveAuditedRecordRepository reactiveAuditedRecordRepository;
 	@Autowired PersonValueRepository personValueRepository;
 	@Autowired CouchbaseTemplate couchbaseTemplate;
 	@Autowired AuditingDateTimeProvider auditingDateTimeProvider;
@@ -188,6 +190,8 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 
 			assertNotNull(found.id());
 			assertNotEquals(0, found.version());
+			assertEquals(createdAt, saved.createdDate());
+			assertEquals(createdAt, saved.lastModifiedDate());
 			assertEquals(createdAt, found.createdDate());
 			assertEquals(createdAt, found.lastModifiedDate());
 
@@ -221,6 +225,8 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 			saved = auditedImmutableEntityRepository.save(new AuditedImmutableEntity(null, 0, null, null, "value"));
 			AuditedImmutableEntity found = auditedImmutableEntityRepository.findById(saved.getId()).orElseThrow();
 
+			assertEquals(createdAt, saved.getCreatedDate());
+			assertEquals(createdAt, saved.getLastModifiedDate());
 			assertEquals(createdAt, found.getCreatedDate());
 			assertEquals(createdAt, found.getLastModifiedDate());
 
@@ -238,6 +244,27 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 			resetAuditingTime();
 			if (saved != null) {
 				auditedImmutableEntityRepository.deleteById(saved.getId());
+			}
+		}
+	}
+
+	@Test
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void reactiveSaveAuditedRecord() {
+		Instant createdAt = Instant.parse("2026-08-12T09:00:00Z");
+		AuditedRecord saved = null;
+		setAuditingTime(createdAt);
+
+		try {
+			saved = reactiveAuditedRecordRepository.save(new AuditedRecord(null, 0, null, null, "value")).block();
+
+			assertNotNull(saved);
+			assertEquals(createdAt, saved.createdDate());
+			assertEquals(createdAt, saved.lastModifiedDate());
+		} finally {
+			resetAuditingTime();
+			if (saved != null) {
+				reactiveAuditedRecordRepository.deleteById(saved.id()).block();
 			}
 		}
 	}
