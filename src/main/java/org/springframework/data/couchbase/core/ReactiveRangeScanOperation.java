@@ -159,7 +159,7 @@ public interface ReactiveRangeScanOperation {
 	}
 
 	/**
-	 * Fluent method to specify a return type different than the the entity type to use for the results.
+	 * Fluent method to specify a return type different than the entity type to use for the results.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
