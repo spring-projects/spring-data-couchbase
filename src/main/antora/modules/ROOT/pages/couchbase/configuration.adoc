@@ -42,7 +42,7 @@ The parent Spring Boot Starter artfacts have the required dependencies, they do 
 ----
 ====
 
-This will pull in several dependencies, including the underlying Couchbase Java SDK, common Spring dependencies and also Jackson as the JSON mapping infrastructure.
+This will pull in several dependencies, including the underlying Couchbase Java SDK, common Spring dependencies and also Jackson 3 as the JSON mapping infrastructure.
 
 You can also grab snapshots from the https://repo.spring.io/ui/repos/tree/General/snapshot/org/springframework/data/spring-data-couchbase[spring snapshot repository] ( \https://repo.spring.io/snapshot ) and milestone releases from the https://repo.spring.io/ui/repos/tree/General/milestone/org/springframework/data/spring-data-couchbase[spring milestone repository] ( \https://repo.spring.io/milestone ).
 Here is an example on how to use the current SNAPSHOT dependency:
@@ -177,6 +177,14 @@ The `bucketName` reflects the bucket you want to use for this configuration.
 
 Additionally, the SDK environment can be tuned by overriding the `configureEnvironment` method which takes a
 `ClusterEnvironment.Builder` to return a configured `ClusterEnvironment`.
+
+The JSON mapper can be customized by overriding the `couchbaseObjectMapper` method.
+It returns a Jackson 3 `JsonMapper`.
+Spring Data Couchbase uses this mapper for the JSON serializer of the SDK environment and for some converters.
+The default mapper keeps the Jackson 2 settings that change the stored JSON, so documents stay the same as with earlier versions.
+To add a Jackson module, return `super.couchbaseObjectMapper().rebuild().addModule(myModule).build()`.
+The mapper does not know the SDK `JsonObject` and `JsonArray` types when they are nested in other objects.
+Entity properties of these types still work, because the Spring Data converters handle them.
 
 Many more things can be customized and overridden as custom beans from this configuration (for example repositories,
 validation and custom converters).

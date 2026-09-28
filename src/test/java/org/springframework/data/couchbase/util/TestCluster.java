@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,10 +31,12 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
-	protected static final ObjectMapper MAPPER = new ObjectMapper();
+	protected static final ObjectMapper MAPPER = JsonMapper.builder().build();
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestCluster.class);
 	/**
 	 * The topology spec defined by the child implementations.
@@ -126,7 +127,7 @@ abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
 		Map<String, Object> decoded;
 		try {
 			decoded = (Map<String, Object>) MAPPER.readValue(config.getBytes(UTF_8), Map.class);
-		} catch (IOException e) {
+		} catch (JacksonException e) {
 			throw new RuntimeException("Error decoding, raw: " + config, e);
 		}
 		List<Map<String, Object>> ext = (List<Map<String, Object>>) decoded.get("nodesExt");
@@ -182,7 +183,7 @@ abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
 		Map<String, Object> decoded;
 		try {
 			decoded = (Map<String, Object>) MAPPER.readValue(config.getBytes(UTF_8), Map.class);
-		} catch (IOException e) {
+		} catch (JacksonException e) {
 			throw new RuntimeException(e);
 		}
 		Map<String, Object> serverMap = (Map<String, Object>) decoded.get("vBucketServerMap");
@@ -194,7 +195,7 @@ abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
 		Map<String, Object> decoded;
 		try {
 			decoded = (Map<String, Object>) MAPPER.readValue(config.getBytes(UTF_8), Map.class);
-		} catch (IOException e) {
+		} catch (JacksonException e) {
 			throw new RuntimeException("Error decoding, raw: " + config, e);
 		}
 		List<Map<String, Object>> ext = (List<Map<String, Object>>) decoded.get("nodesExt");

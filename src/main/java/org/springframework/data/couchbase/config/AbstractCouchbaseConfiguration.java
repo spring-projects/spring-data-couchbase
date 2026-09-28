@@ -19,10 +19,12 @@ package org.springframework.data.couchbase.config;
 import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 
 import java.lang.annotation.Annotation;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -75,18 +77,26 @@ import org.springframework.util.StringUtils;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
-import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.codec.JacksonJsonSerializer;
+import com.couchbase.client.java.codec.Jackson3JsonSerializer;
 import com.couchbase.client.java.encryption.annotation.Encrypted;
-import com.couchbase.client.java.encryption.databind.jackson.EncryptionModule;
+import com.couchbase.client.java.encryption.databind.jackson3.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
-import com.couchbase.client.java.json.JsonValueModule;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.json.JsonWriteFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.cfg.EnumFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.databind.ser.std.ToStringSerializer;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -102,7 +112,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
 
-	volatile ObjectMapper objectMapper;
+	volatile JsonMapper objectMapper;
 	volatile CryptoManager cryptoManager = null;
 
 	/**
@@ -169,10 +179,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean(destroyMethod = "shutdown")
 	public ClusterEnvironment couchbaseClusterEnvironment() {
 		ClusterEnvironment.Builder builder = ClusterEnvironment.builder();
-		if (!nonShadowedJacksonPresent()) {
-			throw new CouchbaseException("non-shadowed Jackson not present");
-		}
-		builder.jsonSerializer(JacksonJsonSerializer.create(getObjectMapper()));
+		builder.jsonSerializer(Jackson3JsonSerializer.create(getObjectMapper()));
 		builder.cryptoManager(getCryptoManager());
 		configureEnvironment(builder);
 		return builder.build();
@@ -314,7 +321,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mappingContext;
 	}
 
-	final public ObjectMapper getObjectMapper() {
+	final public JsonMapper getObjectMapper() {
 		if (objectMapper == null) {
 			synchronized (this) {
 				if (objectMapper == null) {
@@ -326,19 +333,38 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	/**
-	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment and spring-data-couchbase
-	 * jacksonTranslationService and also some converters (EnumToObject, StringToEnum, IntegerToEnum)
+	 * Creates a {@link JsonMapper} for the jsonSerializer of the ClusterEnvironment and spring-data-couchbase
+	 * jacksonTranslationService and also some converters (EnumToObject, StringToEnum, IntegerToEnum).
+	 * <p>
+	 * The mapper keeps the Jackson 2 settings that change the JSON written to or read from Couchbase, so documents stay
+	 * the same as with earlier versions. The mapper does not handle {@link com.couchbase.client.java.json.JsonObject} or
+	 * {@link com.couchbase.client.java.json.JsonArray} nested in other objects. The converters handle these types for
+	 * entity properties.
 	 *
-	 * @return ObjectMapper
+	 * @return JsonMapper
 	 */
-	protected ObjectMapper couchbaseObjectMapper() {
-		ObjectMapper om = new ObjectMapper();
-		om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		om.registerModule(new JsonValueModule());
+	protected JsonMapper couchbaseObjectMapper() {
+		JsonMapper.Builder builder = JsonMapper.builder()
+				.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+				// Jackson 2 defaults that change the JSON written or read
+				.enable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+				.disable(DateTimeFeature.ONE_BASED_MONTHS)
+				.disable(EnumFeature.WRITE_ENUMS_USING_TO_STRING)
+				.disable(EnumFeature.READ_ENUMS_USING_TO_STRING)
+				.disable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
+				.enable(MapperFeature.ALLOW_FINAL_FIELDS_AS_MUTATORS)
+				.enable(MapperFeature.USE_GETTERS_AS_SETTERS)
+				.disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+				.disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+				.disable(JsonWriteFeature.COMBINE_UNICODE_SURROGATES_IN_UTF8)
+				.addModule(new SimpleModule("CouchbaseJackson2Compatibility")
+						// Jackson 3 writes Locale as a language tag and Month as a number
+						.addSerializer(Locale.class, ToStringSerializer.instance)
+						.addSerializer(Month.class, MonthAsNameSerializer.INSTANCE));
 		if (getCryptoManager() != null) {
-			om.registerModule(new EncryptionModule(getCryptoManager()));
+			builder.addModule(new EncryptionModule(getCryptoManager()));
 		}
-		return om;
+		return builder.build();
 	}
 
 	/**
@@ -431,7 +457,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param objectMapper
 	 * @return must not be {@literal null}.
 	 */
-	public CustomConversions customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper) {
+	public CustomConversions customConversions(CryptoManager cryptoManager, JsonMapper objectMapper) {
 		List<Object> newConverters = new ArrayList();
 		// The following
 		newConverters.add(new OtherConverters.EnumToObject(getObjectMapper()));
@@ -452,7 +478,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	/**
-	 * This should be overridden in order to update the {@link #customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper)} List
+	 * This should be overridden in order to update the {@link #customConversions(CryptoManager cryptoManager, JsonMapper objectMapper)} List
 	 */
 	protected void additionalConverters(List<Object> converters) {
 		// NO_OP
@@ -516,16 +542,21 @@ public abstract class AbstractCouchbaseConfiguration {
 				: PropertyNameFieldNamingStrategy.INSTANCE;
 	}
 
-	private boolean nonShadowedJacksonPresent() {
-		try {
-			JacksonJsonSerializer.preflightCheck();
-			return true;
-		} catch (Throwable t) {
-			return false;
-		}
-	}
-
 	public QueryScanConsistency getDefaultConsistency() {
 		return null;
+	}
+
+	private static final class MonthAsNameSerializer extends StdSerializer<Month> {
+
+		static final MonthAsNameSerializer INSTANCE = new MonthAsNameSerializer();
+
+		private MonthAsNameSerializer() {
+			super(Month.class);
+		}
+
+		@Override
+		public void serialize(Month value, JsonGenerator gen, SerializationContext provider) {
+			gen.writeString(value.name());
+		}
 	}
 }

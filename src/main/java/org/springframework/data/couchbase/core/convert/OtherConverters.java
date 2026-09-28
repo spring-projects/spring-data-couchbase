@@ -16,9 +16,6 @@
 
 package org.springframework.data.couchbase.core.convert;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.springframework.data.couchbase.core.util.ByteUtils;
@@ -40,12 +37,12 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.json.JsonValueModule;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.JsonNodeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Out of the box conversions for Other types.
@@ -53,6 +50,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Michael Reiche
  */
 public final class OtherConverters {
+
+	// Jackson 2 stripped trailing zeros of decimals in JsonNode, Jackson 3 keeps them
+	private static final ObjectMapper JSON_NODE_MAPPER = JsonMapper.builder()
+			.enable(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES).build();
 
 	private OtherConverters() {
 	}
@@ -202,7 +203,7 @@ public final class OtherConverters {
 
 	/**
 	 * Writing converter for Enums. This is registered in
-	 * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions( CryptoManager, ObjectMapper)}.
+	 * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions( CryptoManager, JsonMapper)}.
 	 * The corresponding reading converters are in
 	 * {@link IntegerToEnumConverterFactory} and
 	 * {@link StringToEnumConverterFactory}
@@ -211,7 +212,6 @@ public final class OtherConverters {
 	@WritingConverter
 	public static class EnumToObject implements Converter<Enum<?>, Object> {
 		private final ObjectMapper objectMapper;
-		private static final JsonFactory factory = new JsonFactory();
 
 		public EnumToObject(ObjectMapper objectMapper) {
 			this.objectMapper = objectMapper;
@@ -219,19 +219,14 @@ public final class OtherConverters {
 
 		@Override
 		public Object convert(Enum<?> source) {
-			try (Writer writer = new StringWriter(); JsonGenerator generator = factory.createGenerator(writer)) {
-				objectMapper.writeValue(generator, source);
-				String s = writer.toString();
-				if (s != null && s.startsWith("\"")) {
-					return objectMapper.readValue(s, String.class);
-				}
-				if ("true".equals(s) || "false".equals(s)) {
-					return objectMapper.readValue(s, Boolean.class);
-				}
-				return objectMapper.readValue(s, Number.class);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
+			String s = objectMapper.writeValueAsString(source);
+			if (s != null && s.startsWith("\"")) {
+				return objectMapper.readValue(s, String.class);
 			}
+			if ("true".equals(s) || "false".equals(s)) {
+				return objectMapper.readValue(s, Boolean.class);
+			}
+			return objectMapper.readValue(s, Number.class);
 		}
 	}
 
@@ -239,15 +234,13 @@ public final class OtherConverters {
 	public enum JsonNodeToMap implements Converter<JsonNode, CouchbaseDocument> {
 		INSTANCE;
 
-		static ObjectMapper mapper = new ObjectMapper().registerModule(new JsonValueModule());
-
 		@Override
 		public CouchbaseDocument convert(JsonNode source) {
 			if (source == null) {
 				return null;
 			}
 			return new CouchbaseDocument()
-					.setContent((Map) mapper.convertValue(source, new TypeReference<Map<String, Object>>() {
+					.setContent((Map) JSON_NODE_MAPPER.convertValue(source, new TypeReference<Map<String, Object>>() {
 					}));
 		}
 	}
@@ -256,14 +249,12 @@ public final class OtherConverters {
 	public enum MapToJsonNode implements Converter<CouchbaseDocument, JsonNode> {
 		INSTANCE;
 
-		static ObjectMapper mapper = new ObjectMapper().registerModule(new JsonValueModule());
-
 		@Override
 		public JsonNode convert(CouchbaseDocument source) {
 			if (source == null) {
 				return null;
 			}
-			return mapper.valueToTree(source.export());
+			return JSON_NODE_MAPPER.valueToTree(source.export());
 		}
 	}
 
@@ -283,8 +274,6 @@ public final class OtherConverters {
 	@ReadingConverter
 	public enum MapToJsonObject implements Converter<CouchbaseDocument, JsonObject> {
 		INSTANCE;
-
-		static ObjectMapper mapper = new ObjectMapper();
 
 		@Override
 		public JsonObject convert(CouchbaseDocument source) {
@@ -311,8 +300,6 @@ public final class OtherConverters {
 	@ReadingConverter
 	public enum CouchbaseListToJsonArray implements Converter<CouchbaseList, JsonArray> {
 		INSTANCE;
-
-		static ObjectMapper mapper = new ObjectMapper();
 
 		@Override
 		public JsonArray convert(CouchbaseList source) {
