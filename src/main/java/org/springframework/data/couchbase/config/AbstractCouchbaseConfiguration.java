@@ -82,6 +82,7 @@ import com.couchbase.client.java.codec.Jackson3JsonSerializer;
 import com.couchbase.client.java.encryption.annotation.Encrypted;
 import com.couchbase.client.java.encryption.databind.jackson3.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
+import com.couchbase.client.java.json.Jackson3JsonValueModule;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -337,9 +338,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * jacksonTranslationService and also some converters (EnumToObject, StringToEnum, IntegerToEnum).
 	 * <p>
 	 * The mapper keeps the Jackson 2 settings that change the JSON written to or read from Couchbase, so documents stay
-	 * the same as with earlier versions. The mapper does not handle {@link com.couchbase.client.java.json.JsonObject} or
-	 * {@link com.couchbase.client.java.json.JsonArray} nested in other objects. The converters handle these types for
-	 * entity properties.
+	 * the same as with earlier versions.
 	 *
 	 * @return JsonMapper
 	 */
@@ -357,6 +356,7 @@ public abstract class AbstractCouchbaseConfiguration {
 				.disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
 				.disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
 				.disable(JsonWriteFeature.COMBINE_UNICODE_SURROGATES_IN_UTF8)
+				.addModule(new Jackson3JsonValueModule())
 				.addModule(new SimpleModule("CouchbaseJackson2Compatibility")
 						// Jackson 3 writes Locale as a language tag and Month as a number
 						.addSerializer(Locale.class, ToStringSerializer.instance)

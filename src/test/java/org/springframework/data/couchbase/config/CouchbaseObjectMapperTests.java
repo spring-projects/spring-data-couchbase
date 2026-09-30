@@ -44,7 +44,9 @@ import com.couchbase.client.encryption.AeadAes256CbcHmacSha512Provider;
 import com.couchbase.client.encryption.DefaultCryptoManager;
 import com.couchbase.client.encryption.Keyring;
 import com.couchbase.client.java.codec.Jackson3JsonSerializer;
+import com.couchbase.client.java.codec.JsonSerializer;
 import com.couchbase.client.java.encryption.annotation.Encrypted;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -123,6 +125,34 @@ class CouchbaseObjectMapperTests {
 	}
 
 	@Test
+	void pojoWithJsonValuesRoundTrips() {
+		JsonValuePojo pojo = new JsonValuePojo();
+		pojo.jo = JsonObject.create().put("k", "v").put("n", JsonObject.create().put("x", 1)).put("a",
+				JsonArray.from("y", 2));
+		pojo.ja = JsonArray.from("a", 1, JsonObject.create().put("z", true));
+		JsonNode expected = mapper
+				.readTree("{\"jo\":{\"k\":\"v\",\"n\":{\"x\":1},\"a\":[\"y\",2]},\"ja\":[\"a\",1,{\"z\":true}]}");
+
+		String json = mapper.writeValueAsString(pojo);
+		assertThat(mapper.readTree(json)).isEqualTo(expected);
+		JsonValuePojo read = mapper.readValue(json, JsonValuePojo.class);
+		assertThat(read.jo).isEqualTo(pojo.jo);
+		assertThat(read.ja).isEqualTo(pojo.ja);
+
+		ClusterEnvironment env = ClusterEnvironment.builder().jsonSerializer(Jackson3JsonSerializer.create(mapper)).build();
+		try {
+			JsonSerializer serializer = env.jsonSerializer();
+			byte[] bytes = serializer.serialize(pojo);
+			assertThat(mapper.readTree(bytes)).isEqualTo(expected);
+			JsonValuePojo fromSdk = serializer.deserialize(JsonValuePojo.class, bytes);
+			assertThat(fromSdk.jo).isEqualTo(pojo.jo);
+			assertThat(fromSdk.ja).isEqualTo(pojo.ja);
+		} finally {
+			env.shutdown();
+		}
+	}
+
+	@Test
 	void encryptsFieldsWithCryptoManager() {
 		JsonMapper encryptingMapper = new Config() {
 			@Override
@@ -191,6 +221,11 @@ class CouchbaseObjectMapperTests {
 		public Lower lower;
 		public Month month;
 		public Locale locale;
+	}
+
+	static class JsonValuePojo {
+		public JsonObject jo;
+		public JsonArray ja;
 	}
 
 	static class Secret {

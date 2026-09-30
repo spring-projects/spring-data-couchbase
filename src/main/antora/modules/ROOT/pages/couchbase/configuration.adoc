@@ -183,8 +183,6 @@ It returns a Jackson 3 `JsonMapper`.
 Spring Data Couchbase uses this mapper for the JSON serializer of the SDK environment and for some converters.
 The default mapper keeps the Jackson 2 settings that change the stored JSON, so documents stay the same as with earlier versions.
 To add a Jackson module, return `super.couchbaseObjectMapper().rebuild().addModule(myModule).build()`.
-The mapper does not know the SDK `JsonObject` and `JsonArray` types when they are nested in other objects.
-Entity properties of these types still work, because the Spring Data converters handle them.
 
 Many more things can be customized and overridden as custom beans from this configuration (for example repositories,
 validation and custom converters).
