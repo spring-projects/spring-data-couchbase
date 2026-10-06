@@ -40,6 +40,7 @@ import java.time.Instant;
  * @author Jorge Rodriguez Martin
  * @author Carlos Espinaco
  * @author Emilien Bevierre
+ * @author Artur Kalimullin
  * @since 3.0
  */
 class CouchbaseTemplateSupport extends AbstractTemplateSupport implements ApplicationContextAware, TemplateSupport {
@@ -59,6 +60,7 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 		Object maybeNewEntity = maybeCallBeforeConvert(entityToEncode, "");
 		final CouchbaseDocument converted = new CouchbaseDocument();
 		converter.write(maybeNewEntity, converted);
+		converted.setEntityToWrite(maybeNewEntity);
 		maybeCallAfterConvert(entityToEncode, converted, "");
 		maybeEmitEvent(new BeforeSaveEvent<>(entityToEncode, converted));
 		return converted;
@@ -77,9 +79,9 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 	}
 
 	@Override
-	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
-			Object txResultHolder, CouchbaseResourceHolder holder) {
-		return applyResultBase(entity, converted, id, cas, txResultHolder, holder);
+	public <T> T applyResult(CouchbaseDocument converted, long cas, Object txResultHolder,
+			CouchbaseResourceHolder holder) {
+		return applyResultBase(converted, cas, txResultHolder, holder);
 	}
 
 	@Override

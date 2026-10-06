@@ -44,6 +44,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * {@link ReactiveMutateInByIdOperation} implementations for Couchbase.
  *
  * @author Tigran Babloyan
+ * @author Artur Kalimullin
  */
 public class ReactiveMutateInByIdOperationSupport implements ReactiveMutateInByIdOperation {
 
@@ -119,7 +120,7 @@ public class ReactiveMutateInByIdOperationSupport implements ReactiveMutateInByI
 								.flatMap(collection -> collection.reactive()
 										.mutateIn(converted.getId().toString(), getMutations(converted), buildMutateInOptions(pArgs.getOptions(), object, converted))
 										.flatMap(
-												result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)));
+											result -> support.applyResult(converted, result.cas(), null, null)));
 					});
 
 			return reactiveEntity.onErrorMap(throwable -> {

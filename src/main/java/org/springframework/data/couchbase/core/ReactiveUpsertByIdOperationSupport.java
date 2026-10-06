@@ -38,6 +38,7 @@ import com.couchbase.client.java.kv.UpsertOptions;
  *
  * @author Michael Reiche
  * @author Tigran Babloyan
+ * @author Artur Kalimullin
  */
 public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOperation {
 
@@ -99,7 +100,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 								.flatMap(collection -> collection.reactive()
 										.upsert(converted.getId().toString(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
 										.flatMap(
-												result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)));
+											result -> support.applyResult(converted, result.cas(), null, null)));
 					});
 
 			return reactiveEntity.onErrorMap(throwable -> {

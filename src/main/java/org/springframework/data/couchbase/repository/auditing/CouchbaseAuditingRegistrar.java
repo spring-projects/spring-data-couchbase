@@ -32,7 +32,6 @@ import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.event.AuditingEntityCallback;
-import org.springframework.data.couchbase.core.mapping.event.AuditingEventListener;
 import org.springframework.util.Assert;
 
 /**
@@ -44,6 +43,7 @@ import org.springframework.util.Assert;
  * @author Simon Baslé
  * @author Michael Reiche
  * @author Jorge Rodríguez Martín
+ * @author Artur Kalimullin
  */
 public class CouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrarSupport {
 
@@ -85,8 +85,6 @@ public class CouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrarS
 		Assert.notNull(auditingHandlerDefinition, "BeanDefinition must not be null!");
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null!");
 
-		// Register the AuditEntityCallback
-
 		BeanDefinitionBuilder listenerBeanDefinitionBuilder = BeanDefinitionBuilder
 				.rootBeanDefinition(AuditingEntityCallback.class);
 		listenerBeanDefinitionBuilder
@@ -94,16 +92,6 @@ public class CouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrarS
 
 		registerInfrastructureBeanWithId(listenerBeanDefinitionBuilder.getBeanDefinition(),
 				AuditingEntityCallback.class.getName(), registry);
-
-		// Register the AuditingEventListener
-
-		BeanDefinitionBuilder listenerBeanDefinitionBuilder2 = BeanDefinitionBuilder
-				.rootBeanDefinition(AuditingEventListener.class);
-		listenerBeanDefinitionBuilder2
-				.addConstructorArgValue(ParsingUtils.getObjectFactoryBeanDefinition(getAuditingHandlerBeanName(), registry));
-
-		registerInfrastructureBeanWithId(listenerBeanDefinitionBuilder2.getBeanDefinition(),
-				AuditingEventListener.class.getName(), registry);
 
 	}
 

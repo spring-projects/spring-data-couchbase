@@ -21,7 +21,6 @@ import java.lang.reflect.InvocationTargetException;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.cache.CouchbaseCacheManager;
@@ -51,6 +50,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
+ * @author Artur Kalimullin
  * @since 3.0
  */
 @Configuration
@@ -128,7 +128,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 	}
 
 	@Bean(name = "dateTimeProviderRef")
-	public DateTimeProvider testDateTimeProvider() {
+	public AuditingDateTimeProvider testDateTimeProvider() {
 		return new AuditingDateTimeProvider();
 	}
 
@@ -211,7 +211,8 @@ public class Config extends AbstractCouchbaseConfiguration {
 		// that has an getAliasFor(info) that just returns getType().getName().
 		// Our CustomMappingCouchbaseConverter uses a TypeBasedCouchbaseTypeMapper that will
 		// use the DocumentType annotation
-		MappingCouchbaseConverter converter = new CustomMappingCouchbaseConverter(couchbaseMappingContext, typeKey(), couchbaseCustomConversions);
+		MappingCouchbaseConverter converter = new CustomMappingCouchbaseConverter(couchbaseMappingContext, typeKey(),
+				couchbaseCustomConversions);
 		return converter;
 	}
 

@@ -48,6 +48,7 @@ import com.couchbase.client.core.error.CouchbaseException;
  *
  * @author Michael Reiche
  * @author Emilien Bevierre
+ * @author Artur Kalimullin
  */
 @Stability.Internal
 public abstract class AbstractTemplateSupport {
@@ -191,16 +192,18 @@ public abstract class AbstractTemplateSupport {
 		return null;
 	}
 
-	public <T> T applyResultBase(T entity, CouchbaseDocument converted, Object id, long cas,
-			Object txResultHolder, CouchbaseResourceHolder holder) {
-		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
+	@SuppressWarnings("unchecked")
+	public <T> T applyResultBase(CouchbaseDocument converted, long cas, Object txResultHolder,
+			CouchbaseResourceHolder holder) {
+		Object entityToWrite = converted.getEntityToWrite();
+		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entityToWrite);
 
 		CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()
-				.getRequiredPersistentEntity(entity.getClass());
+				.getRequiredPersistentEntity(entityToWrite.getClass());
 
-        CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+		CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
 		if (idProperty != null) {
-			accessor.setProperty(idProperty, id);
+			accessor.setProperty(idProperty, converted.getId());
 		}
 
         CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
