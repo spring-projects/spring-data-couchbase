@@ -182,6 +182,8 @@ The JSON mapper can be customized by overriding the `couchbaseObjectMapper` meth
 It returns a Jackson 3 `JsonMapper`.
 Spring Data Couchbase uses this mapper for the JSON serializer of the SDK environment and for some converters.
 The default mapper keeps the Jackson 2 settings that change the stored JSON, so documents stay the same as with earlier versions.
+The default `JacksonTranslationService` uses the same settings.
+To use plain Jackson 3 defaults, override `couchbaseObjectMapper` and return `JsonMapper.builder().addModule(new Jackson3JsonValueModule()).build()`.
 To add a Jackson module, return `super.couchbaseObjectMapper().rebuild().addModule(myModule).build()`.
 
 Many more things can be customized and overridden as custom beans from this configuration (for example repositories,

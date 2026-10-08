@@ -17,6 +17,8 @@
 package org.springframework.data.couchbase.core.convert.translation;
 
 import java.io.StringWriter;
+import java.time.Month;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.InitializingBean;
@@ -26,13 +28,20 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
+import com.couchbase.client.java.json.Jackson3JsonValueModule;
+
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
+import tools.jackson.core.json.JsonWriteFeature;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.databind.ser.std.ToStringSerializer;
 
 /**
  * A Jackson JSON Translator that implements the {@link TranslationService}
@@ -46,7 +55,7 @@ import tools.jackson.databind.json.JsonMapper;
  */
 public class JacksonTranslationService implements TranslationService, InitializingBean {
 
-	private static final ObjectMapper DEFAULT_OBJECT_MAPPER = JsonMapper.builder().build();
+	private static final ObjectMapper DEFAULT_OBJECT_MAPPER = defaultJsonMapperBuilder().build();
 
 	/**
 	 * Jackson Object Mapper;
@@ -57,6 +66,25 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 * Type holder to help easily identify simple types.
 	 */
 	private SimpleTypeHolder simpleTypeHolder = SimpleTypeHolder.DEFAULT;
+
+	/**
+	 * Creates a {@link JsonMapper.Builder} that keeps the Jackson 2 settings that change the JSON written to or read from
+	 * Couchbase, so documents stay the same as with earlier versions.
+	 *
+	 * @return a new builder.
+	 * @since 6.2
+	 */
+	public static JsonMapper.Builder defaultJsonMapperBuilder() {
+		return JsonMapper.builder().configureForJackson2()
+				// must come after configureForJackson2(), which enables it
+				.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+				.disable(JsonWriteFeature.COMBINE_UNICODE_SURROGATES_IN_UTF8)
+				.addModule(new Jackson3JsonValueModule())
+				.addModule(new SimpleModule("CouchbaseJackson2Compatibility")
+						// Jackson 3 writes Locale as a language tag and Month as a number
+						.addSerializer(Locale.class, ToStringSerializer.instance)
+						.addSerializer(Month.class, MonthAsNameSerializer.INSTANCE));
+	}
 
 	/**
 	 * Encode a {@link CouchbaseStorable} to a JSON string.
@@ -257,6 +285,20 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	public void afterPropertiesSet() {
 		if (objectMapper == null) {
 			objectMapper = DEFAULT_OBJECT_MAPPER;
+		}
+	}
+
+	private static final class MonthAsNameSerializer extends StdSerializer<Month> {
+
+		static final MonthAsNameSerializer INSTANCE = new MonthAsNameSerializer();
+
+		private MonthAsNameSerializer() {
+			super(Month.class);
+		}
+
+		@Override
+		public void serialize(Month value, JsonGenerator gen, SerializationContext provider) {
+			gen.writeString(value.name());
 		}
 	}
 

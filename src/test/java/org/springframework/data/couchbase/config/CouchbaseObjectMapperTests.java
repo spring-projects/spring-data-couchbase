@@ -34,6 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.OtherConverters;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.domain.Config;
@@ -56,12 +57,16 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Checks that the Jackson 3 mapper of {@link AbstractCouchbaseConfiguration} writes and reads the same JSON as the
- * Jackson 2 mapper of earlier versions. The expected values come from a run with Jackson 2.
+ * Checks that the Jackson 3 mappers of {@link AbstractCouchbaseConfiguration} and {@link JacksonTranslationService} write
+ * and read the same JSON as the Jackson 2 mapper of earlier versions. The expected values come from a run with Jackson 2.
  *
  * @author Emilien Bevierre
  */
 class CouchbaseObjectMapperTests {
+
+	private static final String ENTITY_JSON = "{\"bd\":1.50,\"cal\":0,\"ch\":\"c\",\"date\":0,"
+			+ "\"emoji\":\"x\\uD83D\\uDE00y\",\"ja\":[\"a\",1],\"jo\":{\"k\":\"v\",\"n\":{\"x\":1}},\"locale\":\"en_US\","
+			+ "\"lower\":\"TWO\",\"month\":\"MARCH\",\"slash\":\"a/b\",\"t\":\"objectMapperEntity\",\"turbulence\":\"\\\"10%\"}";
 
 	private static Config config;
 	private static JsonMapper mapper;
@@ -83,15 +88,39 @@ class CouchbaseObjectMapperTests {
 
 		byte[] stored = Jackson3JsonSerializer.create(mapper).serialize(doc.export());
 
-		assertThat(new String(stored, StandardCharsets.UTF_8)).isEqualTo("{\"bd\":1.50,\"cal\":0,\"ch\":\"c\",\"date\":0,"
-				+ "\"emoji\":\"x\\uD83D\\uDE00y\",\"ja\":[\"a\",1],\"jo\":{\"k\":\"v\",\"n\":{\"x\":1}},\"locale\":\"en_US\","
-				+ "\"lower\":\"TWO\",\"month\":\"MARCH\",\"slash\":\"a/b\",\"t\":\"objectMapperEntity\",\"turbulence\":\"\\\"10%\"}");
+		assertThat(new String(stored, StandardCharsets.UTF_8)).isEqualTo(ENTITY_JSON);
 
 		Entity read = converter.read(Entity.class, doc);
 		assertThat(read.locale).isEqualTo(Locale.US);
 		assertThat(read.month).isEqualTo(Month.MARCH);
 		assertThat(read.lower).isEqualTo(Lower.TWO);
 		assertThat(read.turbulence).isEqualTo(ETurbulenceCategory.T10);
+		assertThat(read.jo).isEqualTo(new Entity().jo);
+		assertThat(read.ja).isEqualTo(new Entity().ja);
+	}
+
+	@Test
+	void defaultTranslationServiceStoresEntityAsWithJackson2() {
+		JacksonTranslationService service = new JacksonTranslationService();
+		service.afterPropertiesSet();
+		CouchbaseDocument doc = new CouchbaseDocument();
+		converter.write(new Entity(), doc);
+
+		String json = service.encode(doc);
+		// encode() writes chars, not UTF-8 bytes, so the emoji is not escaped as in ENTITY_JSON
+		assertThat(json).isEqualTo(mapper.writeValueAsString(doc.export()));
+		assertThat(json).isEqualTo(ENTITY_JSON.replace("\\uD83D\\uDE00", "😀"));
+
+		CouchbaseDocument decoded = (CouchbaseDocument) service.decode(json, new CouchbaseDocument());
+		decoded.setId(doc.getId());
+		Entity read = converter.read(Entity.class, decoded);
+		assertThat(read.locale).isEqualTo(Locale.US);
+		assertThat(read.month).isEqualTo(Month.MARCH);
+		assertThat(read.lower).isEqualTo(Lower.TWO);
+		assertThat(read.turbulence).isEqualTo(ETurbulenceCategory.T10);
+		assertThat(read.date).isEqualTo(new Date(0));
+		assertThat(read.bd).isEqualTo(new BigDecimal("1.50"));
+		assertThat(read.emoji).isEqualTo("x😀y");
 		assertThat(read.jo).isEqualTo(new Entity().jo);
 		assertThat(read.ja).isEqualTo(new Entity().ja);
 	}

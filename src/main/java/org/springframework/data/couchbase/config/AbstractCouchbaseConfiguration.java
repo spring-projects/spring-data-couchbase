@@ -19,12 +19,10 @@ package org.springframework.data.couchbase.config;
 import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 
 import java.lang.annotation.Annotation;
-import java.time.Month;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -82,22 +80,11 @@ import com.couchbase.client.java.codec.Jackson3JsonSerializer;
 import com.couchbase.client.java.encryption.annotation.Encrypted;
 import com.couchbase.client.java.encryption.databind.jackson3.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
-import com.couchbase.client.java.json.Jackson3JsonValueModule;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.core.json.JsonWriteFeature;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.MapperFeature;
-import tools.jackson.databind.SerializationContext;
-import tools.jackson.databind.cfg.DateTimeFeature;
-import tools.jackson.databind.cfg.EnumFeature;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.module.SimpleModule;
-import tools.jackson.databind.ser.std.StdSerializer;
-import tools.jackson.databind.ser.std.ToStringSerializer;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -337,30 +324,13 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * Creates a {@link JsonMapper} for the jsonSerializer of the ClusterEnvironment and spring-data-couchbase
 	 * jacksonTranslationService and also some converters (EnumToObject, StringToEnum, IntegerToEnum).
 	 * <p>
-	 * The mapper keeps the Jackson 2 settings that change the JSON written to or read from Couchbase, so documents stay
-	 * the same as with earlier versions.
+	 * The mapper starts from {@link JacksonTranslationService#defaultJsonMapperBuilder()}, so documents keep the Jackson 2
+	 * JSON format. Override this method to use other settings, for example plain Jackson 3 defaults.
 	 *
 	 * @return JsonMapper
 	 */
 	protected JsonMapper couchbaseObjectMapper() {
-		JsonMapper.Builder builder = JsonMapper.builder()
-				.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-				// Jackson 2 defaults that change the JSON written or read
-				.enable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
-				.disable(DateTimeFeature.ONE_BASED_MONTHS)
-				.disable(EnumFeature.WRITE_ENUMS_USING_TO_STRING)
-				.disable(EnumFeature.READ_ENUMS_USING_TO_STRING)
-				.disable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
-				.enable(MapperFeature.ALLOW_FINAL_FIELDS_AS_MUTATORS)
-				.enable(MapperFeature.USE_GETTERS_AS_SETTERS)
-				.disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
-				.disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
-				.disable(JsonWriteFeature.COMBINE_UNICODE_SURROGATES_IN_UTF8)
-				.addModule(new Jackson3JsonValueModule())
-				.addModule(new SimpleModule("CouchbaseJackson2Compatibility")
-						// Jackson 3 writes Locale as a language tag and Month as a number
-						.addSerializer(Locale.class, ToStringSerializer.instance)
-						.addSerializer(Month.class, MonthAsNameSerializer.INSTANCE));
+		JsonMapper.Builder builder = JacksonTranslationService.defaultJsonMapperBuilder();
 		if (getCryptoManager() != null) {
 			builder.addModule(new EncryptionModule(getCryptoManager()));
 		}
@@ -544,19 +514,5 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	public QueryScanConsistency getDefaultConsistency() {
 		return null;
-	}
-
-	private static final class MonthAsNameSerializer extends StdSerializer<Month> {
-
-		static final MonthAsNameSerializer INSTANCE = new MonthAsNameSerializer();
-
-		private MonthAsNameSerializer() {
-			super(Month.class);
-		}
-
-		@Override
-		public void serialize(Month value, JsonGenerator gen, SerializationContext provider) {
-			gen.writeString(value.name());
-		}
 	}
 }
