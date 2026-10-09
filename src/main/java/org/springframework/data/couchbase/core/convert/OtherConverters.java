@@ -33,6 +33,7 @@ import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
+import org.springframework.util.ClassUtils;
 
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.java.json.JsonArray;
@@ -55,6 +56,9 @@ public final class OtherConverters {
 	private static final ObjectMapper JSON_NODE_MAPPER = JsonMapper.builder()
 			.enable(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES).build();
 
+	private static final boolean JACKSON_2_PRESENT = ClassUtils.isPresent("com.fasterxml.jackson.databind.JsonNode",
+			OtherConverters.class.getClassLoader());
+
 	private OtherConverters() {
 	}
 
@@ -63,6 +67,7 @@ public final class OtherConverters {
 	 *
 	 * @return the list of converters to register.
 	 */
+	@SuppressWarnings("removal")
 	public static Collection<Converter<?, ?>> getConvertersToRegister() {
 		List<Converter<?, ?>> converters = new ArrayList<>();
 
@@ -84,6 +89,9 @@ public final class OtherConverters {
 		converters.add(CouchbaseListToJsonArray.INSTANCE);
 		converters.add(YearMonthToStringConverter.INSTANCE);
 		converters.add(StringToYearMonthConverter.INSTANCE);
+		if (JACKSON_2_PRESENT) {
+			converters.addAll(Jackson2JsonNodeConverters.getConvertersToRegister());
+		}
 		// EnumToObject, IntegerToEnumConverterFactory and StringToEnumConverterFactory
 		// are
 		// registered in

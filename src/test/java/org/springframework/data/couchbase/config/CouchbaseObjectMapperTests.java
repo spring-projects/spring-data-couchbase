@@ -34,6 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.OtherConverters;
+import org.springframework.data.couchbase.core.convert.translation.Jackson2TranslationService;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.Document;
@@ -112,6 +113,35 @@ class CouchbaseObjectMapperTests {
 		assertThat(json).isEqualTo(ENTITY_JSON.replace("\\uD83D\\uDE00", "😀"));
 
 		CouchbaseDocument decoded = (CouchbaseDocument) service.decode(json, new CouchbaseDocument());
+		decoded.setId(doc.getId());
+		Entity read = converter.read(Entity.class, decoded);
+		assertThat(read.locale).isEqualTo(Locale.US);
+		assertThat(read.month).isEqualTo(Month.MARCH);
+		assertThat(read.lower).isEqualTo(Lower.TWO);
+		assertThat(read.turbulence).isEqualTo(ETurbulenceCategory.T10);
+		assertThat(read.date).isEqualTo(new Date(0));
+		assertThat(read.bd).isEqualTo(new BigDecimal("1.50"));
+		assertThat(read.emoji).isEqualTo("x😀y");
+		assertThat(read.jo).isEqualTo(new Entity().jo);
+		assertThat(read.ja).isEqualTo(new Entity().ja);
+	}
+
+	@Test
+	@SuppressWarnings("removal")
+	void jackson2TranslationServiceStoresEntityAsJacksonTranslationService() {
+		Jackson2TranslationService jackson2 = new Jackson2TranslationService();
+		jackson2.afterPropertiesSet();
+		JacksonTranslationService jackson3 = new JacksonTranslationService();
+		jackson3.afterPropertiesSet();
+		CouchbaseDocument doc = new CouchbaseDocument();
+		converter.write(new Entity(), doc);
+
+		String json = jackson2.encode(doc);
+		assertThat(json).isEqualTo(jackson3.encode(doc));
+
+		CouchbaseDocument decoded = (CouchbaseDocument) jackson2.decode(json, new CouchbaseDocument());
+		assertThat(decoded.export())
+				.isEqualTo(((CouchbaseDocument) jackson3.decode(json, new CouchbaseDocument())).export());
 		decoded.setId(doc.getId());
 		Entity read = converter.read(Entity.class, decoded);
 		assertThat(read.locale).isEqualTo(Locale.US);

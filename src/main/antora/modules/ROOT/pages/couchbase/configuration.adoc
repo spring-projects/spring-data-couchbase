@@ -186,6 +186,41 @@ The default `JacksonTranslationService` uses the same settings.
 To use plain Jackson 3 defaults, override `couchbaseObjectMapper` and return `JsonMapper.builder().addModule(new Jackson3JsonValueModule()).build()`.
 To add a Jackson module, return `super.couchbaseObjectMapper().rebuild().addModule(myModule).build()`.
 
+Jackson 2 support is deprecated and will be removed in a future version.
+To keep using Jackson 2, add `com.fasterxml.jackson.core:jackson-databind` to your dependencies.
+Then override `couchbaseTranslationService()` to return a `Jackson2TranslationService` with your Jackson 2 `ObjectMapper`.
+If you also call the SDK directly, override `configureEnvironment` and give the same mapper to the SDK through `JacksonJsonSerializer`.
+With Spring Boot, declare a `TranslationService` bean instead.
+Entity properties of type Jackson 2 `JsonNode` work when Jackson 2 is on the class path.
+
+[[configuration-jackson2]]
+.Using Jackson 2
+====
+[source,java]
+----
+@Configuration
+public class Config extends AbstractCouchbaseConfiguration {
+
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JsonValueModule());
+
+    @Override
+    public TranslationService couchbaseTranslationService() {
+        Jackson2TranslationService translationService = new Jackson2TranslationService();
+        translationService.setObjectMapper(objectMapper);
+        translationService.afterPropertiesSet();
+        return translationService;
+    }
+
+    @Override
+    protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+        builder.jsonSerializer(JacksonJsonSerializer.create(objectMapper));
+    }
+
+    // connection string, credentials and bucket name as above
+}
+----
+====
+
 Many more things can be customized and overridden as custom beans from this configuration (for example repositories,
 validation and custom converters).
 
