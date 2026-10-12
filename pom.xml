@@ -17,7 +17,7 @@
     </parent>
 
     <properties>
-        <couchbase>3.12.3</couchbase>
+        <couchbase>3.13.0</couchbase>
         <springdata.commons>4.2.0-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
         <hibernate.validator>9.1.4.Final</hibernate.validator>
