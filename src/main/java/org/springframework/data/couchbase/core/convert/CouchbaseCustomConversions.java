@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 import org.springframework.core.convert.converter.GenericConverter;
@@ -46,6 +45,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseSimpleTypes;
 import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.Assert;
+
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Value object to capture custom conversion.
@@ -148,7 +149,7 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 			CouchbaseConverterConfigurationAdapter converterConfigurationAdapter = new CouchbaseConverterConfigurationAdapter();
 			converterConfigurationAdapter.registerConverters(converters);
 			// The following
-			ObjectMapper om = new AbstractCouchbaseConfiguration() {
+			JsonMapper om = new AbstractCouchbaseConfiguration() {
 				@Override
 				public String getConnectionString() {
 					return null;

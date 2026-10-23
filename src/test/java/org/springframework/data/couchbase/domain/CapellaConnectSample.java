@@ -48,7 +48,10 @@ import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.couchbase.client.java.query.QueryResult;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Sample code for connecting to Capella through both the control-plane and the data-plane. An Access Key and a Secret
@@ -76,7 +79,7 @@ public class CapellaConnectSample {
 	static final OkHttpClient httpClient = new OkHttpClient.Builder()
 			.sslSocketFactory(clientCertificates.sslSocketFactory(), clientCertificates.trustManager()).build();
 
-	protected static final ObjectMapper MAPPER = new ObjectMapper();
+	protected static final ObjectMapper MAPPER = JsonMapper.builder().build();
 	static final String authorizationHeaderLabel = "Authorization";
 	static final String timestampHeaderLabel = "Couchbase-Timestamp";
 
@@ -164,7 +167,7 @@ public class CapellaConnectSample {
 
 		try {
 			decoded = (Map<String, Object>) MAPPER.readValue(responseString.getBytes(UTF_8), Map.class);
-		} catch (IOException e) {
+		} catch (JacksonException e) {
 			throw new RuntimeException("Error decoding, raw: " + responseString, e);
 		}
 		return decoded;

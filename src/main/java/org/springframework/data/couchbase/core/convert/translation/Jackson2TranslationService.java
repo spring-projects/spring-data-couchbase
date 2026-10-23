@@ -1,0 +1,279 @@
+/*
+ * Copyright 2012-present the original author or authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.data.couchbase.core.convert.translation;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Map;
+
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.CouchbaseList;
+import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
+import org.springframework.data.mapping.MappingException;
+import org.springframework.data.mapping.model.SimpleTypeHolder;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/**
+ * A {@link TranslationService} that uses Jackson 2. It behaves like {@link JacksonTranslationService} did before the
+ * move to Jackson 3.
+ *
+ * @author Michael Nitschinger
+ * @author Simon Baslé
+ * @author Anastasiia Smirnova
+ * @author Mark Paluch
+ * @author Emilien Bevierre
+ * @since 6.2
+ * @deprecated since 6.2, use {@link JacksonTranslationService}, which uses Jackson 3.
+ */
+@Deprecated(since = "6.2", forRemoval = true)
+public class Jackson2TranslationService implements TranslationService, InitializingBean {
+
+	/**
+	 * Jackson Object Mapper;
+	 */
+	private ObjectMapper objectMapper;
+
+	/**
+	 * Type holder to help easily identify simple types.
+	 */
+	private SimpleTypeHolder simpleTypeHolder = SimpleTypeHolder.DEFAULT;
+
+	/**
+	 * JSON factory for Jackson.
+	 */
+	private JsonFactory factory = new JsonFactory();
+
+	/**
+	 * Encode a {@link CouchbaseStorable} to a JSON string.
+	 *
+	 * @param source the source document to encode.
+	 * @return the encoded JSON String.
+	 */
+	@Override
+	public final String encode(CouchbaseStorable source) {
+		Writer writer = new StringWriter();
+
+		try {
+			JsonGenerator generator = factory.createGenerator(writer);
+			// without a codec, writeObject() fails on simple types such as Character
+			generator.setCodec(objectMapper);
+			encodeRecursive(source, generator);
+			generator.close();
+			writer.close();
+		} catch (IOException ex) {
+			throw new RuntimeException("Could not encode JSON", ex);
+		}
+
+		return writer.toString();
+	}
+
+	/**
+	 * Recursively iterates through the sources and adds it to the JSON generator.
+	 *
+	 * @param source    the source document
+	 * @param generator the JSON generator.
+	 * @throws IOException
+	 */
+	private void encodeRecursive(CouchbaseStorable source, JsonGenerator generator) throws IOException {
+		generator.writeStartObject();
+
+		for (Map.Entry<String, Object> entry : ((CouchbaseDocument) source).export().entrySet()) {
+			String key = entry.getKey();
+			Object value = entry.getValue();
+			generator.writeFieldName(key);
+			if (value instanceof CouchbaseDocument) {
+				encodeRecursive((CouchbaseDocument) value, generator);
+				continue;
+			}
+
+			Class<?> clazz = value.getClass();
+
+			if (simpleTypeHolder.isSimpleType(clazz) && !isEnumOrClass(clazz)) {
+				generator.writeObject(value);
+			} else {
+				objectMapper.writeValue(generator, value);
+			}
+
+		}
+
+		generator.writeEndObject();
+	}
+
+	private boolean isEnumOrClass(Class<?> clazz) {
+		return Enum.class.isAssignableFrom(clazz) || Class.class.isAssignableFrom(clazz);
+	}
+
+	/**
+	 * Decode a JSON string into the {@link CouchbaseStorable} structure.
+	 *
+	 * @param source the source formatted document.
+	 * @param target the target of the populated data.
+	 * @return the decoded structure.
+	 */
+	@Override
+	public final CouchbaseStorable decode(String source, CouchbaseStorable target) {
+		try (JsonParser parser = factory.createParser(source)) {
+			return decodeWithParser(parser, target);
+		} catch (IOException ex) {
+			throw new RuntimeException("Could not decode JSON", ex);
+		}
+	}
+
+	/**
+	 * Decode a JSON byte array into the {@link CouchbaseStorable} structure.
+	 * This avoids the intermediate String allocation by parsing directly from
+	 * bytes.
+	 *
+	 * @param source the source formatted document as bytes (UTF-8 encoded).
+	 * @param target the target of the populated data.
+	 * @return the decoded structure.
+	 */
+	@Override
+	public final CouchbaseStorable decode(byte[] source, CouchbaseStorable target) {
+		try (JsonParser parser = factory.createParser(source)) {
+			return decodeWithParser(parser, target);
+		} catch (IOException ex) {
+			throw new RuntimeException("Could not decode JSON", ex);
+		}
+	}
+
+	private CouchbaseStorable decodeWithParser(JsonParser parser, CouchbaseStorable target) throws IOException {
+		while (parser.nextToken() != null) {
+			JsonToken currentToken = parser.getCurrentToken();
+
+			if (currentToken == JsonToken.START_OBJECT) {
+				return decodeObject(parser, (CouchbaseDocument) target);
+			} else if (currentToken == JsonToken.START_ARRAY) {
+				return decodeArray(parser, new CouchbaseList());
+			} else {
+				throw new MappingException("JSON to decode needs to start as array or object!");
+			}
+		}
+		return target;
+	}
+
+	/**
+	 * Helper method to decode an object recursively.
+	 *
+	 * @param parser the JSON parser with the content.
+	 * @param target the target where the content should be stored.
+	 * @throws IOException
+	 * @returns the decoded object.
+	 */
+	private CouchbaseDocument decodeObject(JsonParser parser, CouchbaseDocument target) throws IOException {
+		JsonToken currentToken = parser.nextToken();
+
+		String fieldName = "";
+		while (currentToken != null && currentToken != JsonToken.END_OBJECT) {
+			if (currentToken == JsonToken.START_OBJECT) {
+				target.put(fieldName, decodeObject(parser, new CouchbaseDocument()));
+			} else if (currentToken == JsonToken.START_ARRAY) {
+				target.put(fieldName, decodeArray(parser, new CouchbaseList()));
+			} else if (currentToken == JsonToken.FIELD_NAME) {
+				fieldName = parser.getCurrentName();
+			} else {
+				target.put(fieldName, decodePrimitive(currentToken, parser));
+			}
+
+			currentToken = parser.nextToken();
+		}
+
+		return target;
+	}
+
+	/**
+	 * Helper method to decode an array recusrively.
+	 *
+	 * @param parser the JSON parser with the content.
+	 * @param target the target where the content should be stored.
+	 * @throws IOException
+	 * @returns the decoded list.
+	 */
+	private CouchbaseList decodeArray(JsonParser parser, CouchbaseList target) throws IOException {
+		JsonToken currentToken = parser.nextToken();
+
+		while (currentToken != null && currentToken != JsonToken.END_ARRAY) {
+			if (currentToken == JsonToken.START_OBJECT) {
+				target.put(decodeObject(parser, new CouchbaseDocument()));
+			} else if (currentToken == JsonToken.START_ARRAY) {
+				target.put(decodeArray(parser, new CouchbaseList()));
+			} else {
+				target.put(decodePrimitive(currentToken, parser));
+			}
+
+			currentToken = parser.nextToken();
+		}
+
+		return target;
+	}
+
+	/**
+	 * Helper method to decode and assign a primitive.
+	 *
+	 * @param token  the type of token.
+	 * @param parser the parser with the content.
+	 * @return the decoded primitve.
+	 * @throws IOException
+	 */
+	private Object decodePrimitive(JsonToken token, JsonParser parser) throws IOException {
+		switch (token) {
+			case VALUE_TRUE:
+			case VALUE_FALSE:
+				return parser.getBooleanValue();
+			case VALUE_STRING:
+				return parser.getValueAsString();
+			case VALUE_NUMBER_INT:
+				return parser.getNumberValue();
+			case VALUE_NUMBER_FLOAT:
+				return parser.getDecimalValue();
+			case VALUE_NULL:
+				return null;
+			default:
+				throw new MappingException("Could not decode primitive value " + token);
+		}
+	}
+
+	@Override
+	public <T> T decodeFragment(String source, Class<T> target) {
+		try {
+			return objectMapper.readValue(source, target);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot decode ad-hoc JSON", e);
+		}
+	}
+
+	public void setObjectMapper(ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
+	}
+
+	@Override
+	public void afterPropertiesSet() {
+		if (objectMapper == null) {
+			objectMapper = new ObjectMapper();
+		}
+		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	}
+
+}

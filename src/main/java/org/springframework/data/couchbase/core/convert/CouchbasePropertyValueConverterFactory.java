@@ -31,14 +31,15 @@ import org.springframework.data.mapping.PersistentProperty;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Accept the Couchbase @Encrypted and @JsonValue annotations in addition to @ValueConverter annotation.<br>
  * There can only be one propertyValueConverter for a property. Although there maybe be multiple annotations,
  * getConverter(property) only returns one converter (a ChainedPropertyValueConverter might be useful). Note that
  * valueConversions.afterPropertiesSet() (see
- * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager, ObjectMapper)}
+ * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager, tools.jackson.databind.json.JsonMapper)}
  * encapsulates this in a CachingPropertyValueConverterFactory which caches by 'property'. Although
  * CachingPropertyValueConverterFactory does have the functionality to cache by a type, it only caches by the type
  * specified on an @ValueConverter annotation.To avoid having identical converter instances for each instance of a class

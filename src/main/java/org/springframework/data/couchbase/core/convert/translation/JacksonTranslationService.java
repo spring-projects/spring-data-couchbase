@@ -16,9 +16,9 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
-import java.io.IOException;
 import java.io.StringWriter;
-import java.io.Writer;
+import java.time.Month;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.beans.factory.InitializingBean;
@@ -28,12 +28,20 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.couchbase.client.java.json.Jackson3JsonValueModule;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.core.json.JsonWriteFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.databind.ser.std.ToStringSerializer;
 
 /**
  * A Jackson JSON Translator that implements the {@link TranslationService}
@@ -47,10 +55,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class JacksonTranslationService implements TranslationService, InitializingBean {
 
+	private static final ObjectMapper DEFAULT_OBJECT_MAPPER = defaultJsonMapperBuilder().build();
+
 	/**
 	 * Jackson Object Mapper;
 	 */
-	private ObjectMapper objectMapper;
+	private ObjectMapper objectMapper = DEFAULT_OBJECT_MAPPER;
 
 	/**
 	 * Type holder to help easily identify simple types.
@@ -58,9 +68,23 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	private SimpleTypeHolder simpleTypeHolder = SimpleTypeHolder.DEFAULT;
 
 	/**
-	 * JSON factory for Jackson.
+	 * Creates a {@link JsonMapper.Builder} that keeps the Jackson 2 settings that change the JSON written to or read from
+	 * Couchbase, so documents stay the same as with earlier versions.
+	 *
+	 * @return a new builder.
+	 * @since 6.2
 	 */
-	private JsonFactory factory = new JsonFactory();
+	public static JsonMapper.Builder defaultJsonMapperBuilder() {
+		return JsonMapper.builder().configureForJackson2()
+				// must come after configureForJackson2(), which enables it
+				.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+				.disable(JsonWriteFeature.COMBINE_UNICODE_SURROGATES_IN_UTF8)
+				.addModule(new Jackson3JsonValueModule())
+				.addModule(new SimpleModule("CouchbaseJackson2Compatibility")
+						// Jackson 3 writes Locale as a language tag and Month as a number
+						.addSerializer(Locale.class, ToStringSerializer.instance)
+						.addSerializer(Month.class, MonthAsNameSerializer.INSTANCE));
+	}
 
 	/**
 	 * Encode a {@link CouchbaseStorable} to a JSON string.
@@ -70,14 +94,11 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 */
 	@Override
 	public final String encode(CouchbaseStorable source) {
-		Writer writer = new StringWriter();
+		StringWriter writer = new StringWriter();
 
-		try {
-			JsonGenerator generator = factory.createGenerator(writer);
+		try (JsonGenerator generator = objectMapper.createGenerator(writer)) {
 			encodeRecursive(source, generator);
-			generator.close();
-			writer.close();
-		} catch (IOException ex) {
+		} catch (JacksonException ex) {
 			throw new RuntimeException("Could not encode JSON", ex);
 		}
 
@@ -89,15 +110,14 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 *
 	 * @param source    the source document
 	 * @param generator the JSON generator.
-	 * @throws IOException
 	 */
-	private void encodeRecursive(CouchbaseStorable source, JsonGenerator generator) throws IOException {
+	private void encodeRecursive(CouchbaseStorable source, JsonGenerator generator) {
 		generator.writeStartObject();
 
 		for (Map.Entry<String, Object> entry : ((CouchbaseDocument) source).export().entrySet()) {
 			String key = entry.getKey();
 			Object value = entry.getValue();
-			generator.writeFieldName(key);
+			generator.writeName(key);
 			if (value instanceof CouchbaseDocument) {
 				encodeRecursive((CouchbaseDocument) value, generator);
 				continue;
@@ -106,7 +126,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 			Class<?> clazz = value.getClass();
 
 			if (simpleTypeHolder.isSimpleType(clazz) && !isEnumOrClass(clazz)) {
-				generator.writeObject(value);
+				generator.writePOJO(value);
 			} else {
 				objectMapper.writeValue(generator, value);
 			}
@@ -129,9 +149,9 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 */
 	@Override
 	public final CouchbaseStorable decode(String source, CouchbaseStorable target) {
-		try (JsonParser parser = factory.createParser(source)) {
+		try (JsonParser parser = objectMapper.createParser(source)) {
 			return decodeWithParser(parser, target);
-		} catch (IOException ex) {
+		} catch (JacksonException ex) {
 			throw new RuntimeException("Could not decode JSON", ex);
 		}
 	}
@@ -147,16 +167,16 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 */
 	@Override
 	public final CouchbaseStorable decode(byte[] source, CouchbaseStorable target) {
-		try (JsonParser parser = factory.createParser(source)) {
+		try (JsonParser parser = objectMapper.createParser(source)) {
 			return decodeWithParser(parser, target);
-		} catch (IOException ex) {
+		} catch (JacksonException ex) {
 			throw new RuntimeException("Could not decode JSON", ex);
 		}
 	}
 
-	private CouchbaseStorable decodeWithParser(JsonParser parser, CouchbaseStorable target) throws IOException {
+	private CouchbaseStorable decodeWithParser(JsonParser parser, CouchbaseStorable target) {
 		while (parser.nextToken() != null) {
-			JsonToken currentToken = parser.getCurrentToken();
+			JsonToken currentToken = parser.currentToken();
 
 			if (currentToken == JsonToken.START_OBJECT) {
 				return decodeObject(parser, (CouchbaseDocument) target);
@@ -174,10 +194,9 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 *
 	 * @param parser the JSON parser with the content.
 	 * @param target the target where the content should be stored.
-	 * @throws IOException
 	 * @returns the decoded object.
 	 */
-	private CouchbaseDocument decodeObject(JsonParser parser, CouchbaseDocument target) throws IOException {
+	private CouchbaseDocument decodeObject(JsonParser parser, CouchbaseDocument target) {
 		JsonToken currentToken = parser.nextToken();
 
 		String fieldName = "";
@@ -186,8 +205,8 @@ public class JacksonTranslationService implements TranslationService, Initializi
 				target.put(fieldName, decodeObject(parser, new CouchbaseDocument()));
 			} else if (currentToken == JsonToken.START_ARRAY) {
 				target.put(fieldName, decodeArray(parser, new CouchbaseList()));
-			} else if (currentToken == JsonToken.FIELD_NAME) {
-				fieldName = parser.getCurrentName();
+			} else if (currentToken == JsonToken.PROPERTY_NAME) {
+				fieldName = parser.currentName();
 			} else {
 				target.put(fieldName, decodePrimitive(currentToken, parser));
 			}
@@ -203,10 +222,9 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 *
 	 * @param parser the JSON parser with the content.
 	 * @param target the target where the content should be stored.
-	 * @throws IOException
 	 * @returns the decoded list.
 	 */
-	private CouchbaseList decodeArray(JsonParser parser, CouchbaseList target) throws IOException {
+	private CouchbaseList decodeArray(JsonParser parser, CouchbaseList target) {
 		JsonToken currentToken = parser.nextToken();
 
 		while (currentToken != null && currentToken != JsonToken.END_ARRAY) {
@@ -230,9 +248,8 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 * @param token  the type of token.
 	 * @param parser the parser with the content.
 	 * @return the decoded primitve.
-	 * @throws IOException
 	 */
-	private Object decodePrimitive(JsonToken token, JsonParser parser) throws IOException {
+	private Object decodePrimitive(JsonToken token, JsonParser parser) {
 		switch (token) {
 			case VALUE_TRUE:
 			case VALUE_FALSE:
@@ -253,8 +270,9 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	@Override
 	public <T> T decodeFragment(String source, Class<T> target) {
 		try {
-			return objectMapper.readValue(source, target);
-		} catch (IOException e) {
+			return objectMapper.readerFor(target).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+					.readValue(source);
+		} catch (JacksonException e) {
 			throw new RuntimeException("Cannot decode ad-hoc JSON", e);
 		}
 	}
@@ -266,9 +284,22 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	@Override
 	public void afterPropertiesSet() {
 		if (objectMapper == null) {
-			objectMapper = new ObjectMapper();
+			objectMapper = DEFAULT_OBJECT_MAPPER;
 		}
-		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	}
+
+	private static final class MonthAsNameSerializer extends StdSerializer<Month> {
+
+		static final MonthAsNameSerializer INSTANCE = new MonthAsNameSerializer();
+
+		private MonthAsNameSerializer() {
+			super(Month.class);
+		}
+
+		@Override
+		public void serialize(Month value, JsonGenerator gen, SerializationContext provider) {
+			gen.writeString(value.name());
+		}
 	}
 
 }
