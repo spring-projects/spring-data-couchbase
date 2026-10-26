@@ -29,6 +29,7 @@ import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
  *
  * @author Michael Reiche
  * @author Emilien Bevierre
+ * @author Artur Kalimullin
  */
 public interface ReactiveTemplateSupport {
 
@@ -43,8 +44,8 @@ public interface ReactiveTemplateSupport {
 				collection, txResultHolder, holder);
 	}
 
-	<T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-			Object txResultHolder, CouchbaseResourceHolder holder);
+	<T> Mono<T> applyResult(CouchbaseDocument converted, Long cas, Object txResultHolder,
+			CouchbaseResourceHolder holder);
 
 	Long getCas(Object entity);
 

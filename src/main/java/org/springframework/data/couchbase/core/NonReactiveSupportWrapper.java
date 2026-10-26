@@ -29,6 +29,7 @@ import java.time.Instant;
  * @author Carlos Espinaco
  * @author Michael Reiche
  * @author Emilien Bevierre
+ * @author Artur Kalimullin
  * @since 4.2
  */
 public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
@@ -59,9 +60,9 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-								   Object txResultHolder, CouchbaseResourceHolder holder) {
-		return Mono.fromSupplier(() -> support.applyResult(entity, converted, id, cas, txResultHolder, holder));
+	public <T> Mono<T> applyResult(CouchbaseDocument converted, Long cas, Object txResultHolder,
+			CouchbaseResourceHolder holder) {
+		return Mono.fromSupplier(() -> support.applyResult(converted, cas, txResultHolder, holder));
 	}
 
 

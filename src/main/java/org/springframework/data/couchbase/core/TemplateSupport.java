@@ -25,6 +25,7 @@ import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 /**
  * @author Michael Reiche
  * @author Emilien Bevierre
+ * @author Artur Kalimullin
  */
 public interface TemplateSupport {
 
@@ -40,8 +41,7 @@ public interface TemplateSupport {
 				collection, txResultHolder, holder);
 	}
 
-	<T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas, Object txResultHolder,
-			CouchbaseResourceHolder holder);
+	<T> T applyResult(CouchbaseDocument converted, long cas, Object txResultHolder, CouchbaseResourceHolder holder);
 
 	Long getCas(Object entity);
 

@@ -33,6 +33,7 @@ import java.util.Map;
  * topmost document most likely has an ID.
  *
  * @author Michael Nitschinger
+ * @author Artur Kalimullin
  */
 public class CouchbaseDocument implements CouchbaseStorable {
 
@@ -55,6 +56,11 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 * Contains the expiration time of the document.
 	 */
 	private int expiration;
+
+	/**
+	 * Contains the entity encoded into this document.
+	 */
+	private Object entityToWrite;
 
 	/**
 	 * Creates a completely empty {@link CouchbaseDocument}.
@@ -257,6 +263,26 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 */
 	public CouchbaseDocument setId(Object id) {
 		this.id = id;
+		return this;
+	}
+
+	/**
+	 * Returns the entity encoded into this document.
+	 *
+	 * @return the entity encoded into this document.
+	 */
+	public Object getEntityToWrite() {
+		return entityToWrite;
+	}
+
+	/**
+	 * Sets the entity encoded into this document.
+	 *
+	 * @param entityToWrite the entity encoded into this document.
+	 * @return this document.
+	 */
+	public CouchbaseDocument setEntityToWrite(Object entityToWrite) {
+		this.entityToWrite = entityToWrite;
 		return this;
 	}
 
