@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:couchbase="http://www.springframework.org/schema/data/couchbase"
+       xmlns="http://www.springframework.org/schema/beans"
+       xsi:schemaLocation="http://www.springframework.org/schema/data/couchbase https://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd
+                           http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <couchbase:cluster id="clusterDefault"/>
+
+    <couchbase:bucket id="bucketDefaultNoCluster"/>
+
+    <couchbase:bucket id="bucketDefault" cluster-ref="clusterDefault"/>
+
+    <couchbase:bucket id="bucketWithName" cluster-ref="clusterDefault" bucketName="toto"/>
+
+    <couchbase:bucket id="bucketWithNameAndPassword" cluster-ref="clusterDefault" bucketName="test" username="testuser"
+                      bucketPassword="123"/>
+
+</beans>

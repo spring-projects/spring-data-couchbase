@@ -1,0 +1,1446 @@
+Spring Data Couchbase Changelog
+===============================
+
+Changes in version 4.3.0-M1 (2021-07-16)
+----------------------------------------
+* #1157 - upgrade java sdk version to 3.1.6.
+* #1141 - Custom converter for multibuckets.
+* #1140 - Feature 'Inject translation service bean in CouchbaseTemplateSupport' has been deleted.
+* #1131 - Delete N1QL query is deleting all documents instead of deleting only documents that matches the criteria.
+* #1130 - add couchbaseJsonValueModule bean to AbstractCouchbaseConfiguration.
+* #1104 - Update CI to Java 16.
+* #1074 - AfterSaveEvent is never triggered.
+* #963 - Support for Scope and Collection API Changes [DATACOUCH-655].
+
+
+Changes in version 4.1.11 (2021-07-16)
+--------------------------------------
+
+
+Changes in version 4.2.2 (2021-06-22)
+-------------------------------------
+
+
+Changes in version 4.1.10 (2021-06-22)
+--------------------------------------
+
+
+Changes in version 4.2.1 (2021-05-14)
+-------------------------------------
+* #1136 - upgrade java sdk to 3.1.5.
+
+
+Changes in version 4.1.9 (2021-05-14)
+-------------------------------------
+
+
+Changes in version 4.2.0 (2021-04-14)
+-------------------------------------
+* #1122 - upgrade master to SDK 3.1.4.
+* #1119 - Make supporting @TypeAlias the default behavior.
+* #1097 - NullPointerException in @Query that do not project __cas .  Should check for this explicitly.
+* #955 - Add @EnableReactiveCouchbaseAuditing  [DATACOUCH-644].
+
+
+Changes in version 4.1.8 (2021-04-14)
+-------------------------------------
+
+
+Changes in version 4.0.9.RELEASE (2021-04-14)
+---------------------------------------------
+
+
+Changes in version 4.1.7 (2021-03-31)
+-------------------------------------
+* #1103 - revert 4.1.x to sdk 3.0.x.
+
+
+Changes in version 4.2.0-RC1 (2021-03-31)
+-----------------------------------------
+* #1105 - Readme lists artifacts with .RELEASE and .BUILD-SNAPSHOT suffixes.
+* #1096 - SimpleReactiveCouchbaseRepository.deleteAll() missing scan consistency.
+* #1073 - Support for ARRAY_CONTAINS.
+* #1069 - Enums can't be used as method parameters in Repository.
+* #1064 - N1QLExpression#keys is broken.
+
+
+Changes in version 4.2.0-M5 (2021-03-17)
+----------------------------------------
+* #1092 - regression - changes to public API CouchbaseRepositoryQuery and ReactiveCouchbaseRepositoryQuery.
+* #1079 - Upgrade to Couchbase SDK 3.1.3.
+
+
+Changes in version 4.1.6 (2021-03-17)
+-------------------------------------
+* #1092 - regression - changes to public API CouchbaseRepositoryQuery and ReactiveCouchbaseRepositoryQuery.
+* #1079 - Upgrade to Couchbase SDK 3.1.3.
+
+
+Changes in version 4.0.8.RELEASE (2021-03-17)
+---------------------------------------------
+
+
+Changes in version 4.2.0-M4 (2021-02-18)
+----------------------------------------
+* #858 - AutoIndexing is not Working properly [DATACOUCH-550].
+
+
+Changes in version 4.1.5 (2021-02-18)
+-------------------------------------
+
+
+Changes in version 4.2.0-M3 (2021-02-17)
+----------------------------------------
+* DATACOUCH-652 - CouchbaseTemplateSupport does not allow a TranslationService bean to be injected.
+* DATACOUCH-588 - ParameterOutOfBoundsException: Invalid parameter index.
+* DATACOUCH-550 - AutoIndexing is not Working properly.
+
+
+Changes in version 4.1.4 (2021-02-17)
+-------------------------------------
+* DATACOUCH-675 - factor out interfaces for common methods to facilitate easier testing.
+* DATACOUCH-653 - Docs still shows version 4.0.0.RELEASE.
+* DATACOUCH-652 - CouchbaseTemplateSupport does not allow a TranslationService bean to be injected.
+* DATACOUCH-645 - expiryExpression ignored, but expiry works.
+* DATACOUCH-588 - ParameterOutOfBoundsException: Invalid parameter index.
+* DATACOUCH-550 - AutoIndexing is not Working properly.
+* DATACOUCH-526 - N1QL Join resolver doesn't resolver bucket name with special characters.
+
+
+Changes in version 4.0.7.RELEASE (2021-02-17)
+---------------------------------------------
+* DATACOUCH-672 - reinstate "replace" expiry tests inadvertently removed in DATACOUCH-666.
+* DATACOUCH-666 - ReplaceById needs change that is in UpsertById in DATACOUCH-625 for immutable entities.
+* DATACOUCH-664 - Update CI jobs with Docker Login.
+* DATACOUCH-661 - Fix integrations tests for datacouch-650.
+* DATACOUCH-650 - Implement CrudRepository.delete(Iterable<ID> ids).
+* DATACOUCH-630 - Expiry of document not working at all?.
+
+
+Changes in version 3.2.13.RELEASE (2021-02-17)
+----------------------------------------------
+
+
+Changes in version 4.2.0-M2 (2021-01-13)
+----------------------------------------
+* DATACOUCH-677 - revert 8ebb81b to fix comment (DATACOUCH-550).
+* DATACOUCH-675 - factor out interfaces for common methods to facilitate easier testing.
+* DATACOUCH-672 - reinstate "replace" expiry tests inadvertently removed in DATACOUCH-666.
+* DATACOUCH-666 - ReplaceById needs change that is in UpsertById in DATACOUCH-625 for immutable entities.
+* DATACOUCH-664 - Update CI jobs with Docker Login.
+* DATACOUCH-645 - expiryExpression ignored, but expiry works.
+* DATACOUCH-630 - Expiry of document not working at all?.
+* DATACOUCH-588 - ParameterOutOfBoundsException: Invalid parameter index.
+* DATACOUCH-550 - AutoIndexing is not Working properly.
+* DATACOUCH-526 - N1QL Join resolver doesn't resolver bucket name with special characters.
+
+
+Changes in version 4.1.3 (2021-01-13)
+-------------------------------------
+* DATACOUCH-672 - reinstate "replace" expiry tests inadvertently removed in DATACOUCH-666.
+* DATACOUCH-666 - ReplaceById needs change that is in UpsertById in DATACOUCH-625 for immutable entities.
+* DATACOUCH-664 - Update CI jobs with Docker Login.
+* DATACOUCH-661 - Fix integrations tests for datacouch-650.
+* DATACOUCH-650 - Implement CrudRepository.delete(Iterable<ID> ids).
+* DATACOUCH-630 - Expiry of document not working at all?.
+
+
+Changes in version 4.1.2 (2020-12-09)
+-------------------------------------
+* DATACOUCH-648 - Release 4.1.2 (2020.0.2).
+
+
+Changes in version 4.2.0-M1 (2020-12-09)
+----------------------------------------
+* DATACOUCH-650 - Implement CrudRepository.delete(Iterable<ID> ids).
+* DATACOUCH-641 - Enable Maven caching for Jenkins jobs.
+* DATACOUCH-640 - Release 4.2 M1 (2021.0.0).
+
+
+Changes in version 4.0.6.RELEASE (2020-12-09)
+---------------------------------------------
+* DATACOUCH-641 - Enable Maven caching for Jenkins jobs.
+* DATACOUCH-638 - Release 4.0.6 (Neumann SR6).
+
+
+Changes in version 3.2.12.RELEASE (2020-12-09)
+----------------------------------------------
+* DATACOUCH-637 - Release 3.2.12 (Moore SR12).
+
+
+Changes in version 4.1.1 (2020-11-11)
+-------------------------------------
+* DATACOUCH-641 - Enable Maven caching for Jenkins jobs.
+* DATACOUCH-639 - Release 4.1.1 (2020.0.1).
+
+
+Changes in version 4.1.0 (2020-10-28)
+-------------------------------------
+* DATACOUCH-635 - Release 4.1 GA (2020.0.0).
+* DATACOUCH-634 - upgrade to couchbase java sdk 3.0.9.
+* DATACOUCH-626 - all-arguments constructor incompatible with '@Version private long version'.
+* DATACOUCH-625 - save() doesn't return updated entity if immutable properties used for @id or @version.
+* DATACOUCH-623 - CAS not working with @Version.
+* DATACOUCH-620 - fix issue with id in nested objects caused by DATACOUCH-533.
+* DATACOUCH-616 - Positional parameters not detected inside SpEL expressions.
+* DATACOUCH-615 - (Reactive)CouchbaseTemplate - removeByQuery always remove all data.
+* DATACOUCH-608 - expiry Document annotation, option not processed during upsert, insert.
+* DATACOUCH-605 - @ScanConsistency ignored for n1ql queries.
+* DATACOUCH-604 - Error creating repository.
+* DATACOUCH-603 - N1qlQueryCreator - IN, NOT IN should not cast parameter to Object[].
+* DATACOUCH-595 - Replace does not add cas to options if present.
+* DATACOUCH-583 - find by nested properties doesn't work.
+* DATACOUCH-580 - ambiguous reference to field _class (predicate following LIMIT).
+* DATACOUCH-574 - add countBy... to repository queries.
+* DATACOUCH-573 - count() "_count" is projected, but get("count") used to retrieve.
+* DATACOUCH-572 - fix compile error introduced in DATACOUCH-571.
+* DATACOUCH-571 - generated key delimiter not used in suffix if there was no prefix.
+* DATACOUCH-569 - Add tests for fix to DATACOUCH-560.
+* DATACOUCH-533 - Promote Attribute called id when @Id is not present.
+* DATACOUCH-532 - queries use literals instead of parameters, preventing the re-use of query plans.
+
+
+Changes in version 4.0.5.RELEASE (2020-10-28)
+---------------------------------------------
+* DATACOUCH-634 - upgrade to couchbase java sdk 3.0.9.
+* DATACOUCH-626 - all-arguments constructor incompatible with '@Version private long version'.
+* DATACOUCH-625 - save() doesn't return updated entity if immutable properties used for @id or @version.
+* DATACOUCH-623 - CAS not working with @Version.
+* DATACOUCH-620 - fix issue with id in nested objects caused by DATACOUCH-533.
+* DATACOUCH-616 - Positional parameters not detected inside SpEL expressions.
+* DATACOUCH-615 - (Reactive)CouchbaseTemplate - removeByQuery always remove all data.
+* DATACOUCH-611 - Release 4.0.5 (Neumann SR5).
+* DATACOUCH-608 - expiry Document annotation, option not processed during upsert, insert.
+* DATACOUCH-605 - @ScanConsistency ignored for n1ql queries.
+* DATACOUCH-604 - Error creating repository.
+* DATACOUCH-603 - N1qlQueryCreator - IN, NOT IN should not cast parameter to Object[].
+* DATACOUCH-595 - Replace does not add cas to options if present.
+* DATACOUCH-583 - find by nested properties doesn't work.
+
+
+Changes in version 3.2.11.RELEASE (2020-10-28)
+----------------------------------------------
+* DATACOUCH-610 - Release 3.2.11 (Moore SR11).
+
+
+Changes in version 3.1.21.RELEASE (2020-10-28)
+----------------------------------------------
+* DATACOUCH-636 - Release 3.1.21 (Lovelace SR21).
+
+
+Changes in version 4.1.0-RC2 (2020-10-14)
+-----------------------------------------
+* DATACOUCH-612 - Release 4.1 RC2 (2020.0.0).
+
+
+Changes in version 4.1.0-RC1 (2020-09-16)
+-----------------------------------------
+* DATACOUCH-607 - Upgrade to Couchbase SDK 3.0.8.
+* DATACOUCH-601 - Release 4.1 RC1 (2020.0.0).
+
+
+Changes in version 4.0.4.RELEASE (2020-09-16)
+---------------------------------------------
+* DATACOUCH-607 - Upgrade to Couchbase SDK 3.0.8.
+* DATACOUCH-602 - Release 4.0.4 (Neumann SR4).
+
+
+Changes in version 3.2.10.RELEASE (2020-09-16)
+----------------------------------------------
+* DATACOUCH-592 - Release 3.2.10 (Moore SR10).
+
+
+Changes in version 3.1.20.RELEASE (2020-09-16)
+----------------------------------------------
+* DATACOUCH-596 - fix failure of new test (N1qlCouchbaseRepositoryTest) in 3.1.x.
+* DATACOUCH-591 - Release 3.1.20 (Lovelace SR20).
+
+
+Changes in version 4.0.3.RELEASE (2020-08-12)
+---------------------------------------------
+* DATACOUCH-599 - Upgrade to Couchbase SDK 3.0.7.
+* DATACOUCH-593 - Release 4.0.3 (Neumann SR3).
+
+
+Changes in version 4.1.0-M2 (2020-08-12)
+----------------------------------------
+* DATACOUCH-599 - Upgrade to Couchbase SDK 3.0.7.
+* DATACOUCH-586 - Upgrade to Couchbase Driver 3.0.6.
+* DATACOUCH-578 - Release 4.1 M2 (2020.0.0).
+
+
+Changes in version 4.0.2.RELEASE (2020-07-22)
+---------------------------------------------
+* DATACOUCH-590 - Using LIMIT within @Query.
+* DATACOUCH-586 - Upgrade to Couchbase Driver 3.0.6.
+* DATACOUCH-580 - ambiguous reference to field _class (predicate following LIMIT).
+* DATACOUCH-576 - MappingInstantiationException: Failed to instantiate java.util.List using constructor NO_CONSTRUCTOR with arguments.
+* DATACOUCH-574 - add countBy... to repository queries.
+* DATACOUCH-573 - count() "_count" is projected, but get("count") used to retrieve.
+* DATACOUCH-572 - fix compile error introduced in DATACOUCH-571.
+* DATACOUCH-571 - generated key delimiter not used in suffix if there was no prefix.
+* DATACOUCH-569 - Add tests for fix to DATACOUCH-560.
+* DATACOUCH-568 - Release 4.0.2 (Neumann SR2).
+* DATACOUCH-560 - Unexpected serialization of List<Object> fields.
+* DATACOUCH-557 - Spring Data Couchbase doesn't create PersistentEntity for MyClass.
+* DATACOUCH-546 - Entities persisted and returned by  CouchbaseRepository.save() and CouchbaseRepository.saveAll() do not have an id.
+* DATACOUCH-535 - Add support for TypeAlias.
+* DATACOUCH-533 - Promote Attribute called id when @Id is not present.
+* DATACOUCH-532 - queries use literals instead of parameters, preventing the re-use of query plans.
+* DATACOUCH-486 - @Query parameter collection to array.
+* DATACOUCH-484 - Thread safety issue using findByXXX.
+
+
+Changes in version 3.2.9.RELEASE (2020-07-22)
+---------------------------------------------
+* DATACOUCH-587 - Upgrade to Couchbase Driver 2.7.16.
+* DATACOUCH-567 - Release 3.2.9 (Moore SR9).
+
+
+Changes in version 3.1.19.RELEASE (2020-07-22)
+----------------------------------------------
+* DATACOUCH-566 - Release 3.1.19 (Lovelace SR19).
+
+
+Changes in version 4.1.0-M1 (2020-06-25)
+----------------------------------------
+* DATACOUCH-565 - Use standard Spring code of conduct.
+* DATACOUCH-562 - Upgrade to Couchbase SDK 3.0.5.
+* DATACOUCH-561 - Better testing for N1QL String queries.
+* DATACOUCH-548 - Release 4.1 M1 (2020.0.0).
+* DATACOUCH-545 - CouchbaseRepository.findById() throws DataRetrievalFailureException when no document is found.
+* DATACOUCH-543 - Repository can not return single values.
+* DATACOUCH-542 - @Field is ignored.
+* DATACOUCH-541 - Searching for ID that does not exist throws exception.
+* DATACOUCH-534 - add support for @Query annotation (n1ql string).
+* DATACOUCH-525 - Enable usage of custom 'type' in queries.
+
+
+Changes in version 4.0.1.RELEASE (2020-06-10)
+---------------------------------------------
+* DATACOUCH-562 - Upgrade to Couchbase SDK 3.0.5.
+* DATACOUCH-561 - Better testing for N1QL String queries.
+* DATACOUCH-554 - Readd omitted raw @Query functionality.
+* DATACOUCH-547 - Release 4.0.1 (Neumann SR1).
+* DATACOUCH-545 - CouchbaseRepository.findById() throws DataRetrievalFailureException when no document is found.
+* DATACOUCH-543 - Repository can not return single values.
+* DATACOUCH-542 - @Field is ignored.
+* DATACOUCH-541 - Searching for ID that does not exist throws exception.
+* DATACOUCH-534 - add support for @Query annotation (n1ql string).
+* DATACOUCH-525 - Enable usage of custom 'type' in queries.
+
+
+Changes in version 3.2.8.RELEASE (2020-06-10)
+---------------------------------------------
+* DATACOUCH-563 - Upgrade to Couchbase SDK 2.7.15.
+* DATACOUCH-529 - Release 3.2.8 (Moore SR8).
+
+
+Changes in version 3.1.18.RELEASE (2020-06-10)
+----------------------------------------------
+* DATACOUCH-528 - Release 3.1.18 (Lovelace SR18).
+
+
+Changes in version 4.0.0.RELEASE (2020-05-12)
+---------------------------------------------
+* DATACOUCH-544 - Upgrade to Couchbase SDK 3.0.3.
+* DATACOUCH-539 - Deprecate Annotations.
+* DATACOUCH-538 - Add scan consistency to analytics template query.
+* DATACOUCH-531 - Polish Javadoc for GA.
+* DATACOUCH-530 - Release 4.0 GA (Neumann).
+
+
+Changes in version 4.0.0.RC2 (2020-04-28)
+-----------------------------------------
+* DATACOUCH-517 - Update SDK to 3.0.3.
+* DATACOUCH-516 - Use JDK 14 for Java.NEXT CI testing.
+* DATACOUCH-514 - Release 4.0 RC2 (Neumann).
+
+
+Changes in version 3.2.7.RELEASE (2020-04-28)
+---------------------------------------------
+* DATACOUCH-523 - Upgrade to Couchbase Driver 2.7.14.
+* DATACOUCH-513 - Release 3.2.7 (Moore SR7).
+
+
+Changes in version 3.1.17.RELEASE (2020-04-28)
+----------------------------------------------
+* DATACOUCH-507 - Release 3.1.17 (Lovelace SR17).
+
+
+Changes in version 4.0.0.RC1 (2020-03-31)
+-----------------------------------------
+* DATACOUCH-512 - Release 4.0 RC1 (Neumann).
+* DATACOUCH-510 - Restore separate configuration with only Spring Data infrastructure.
+* DATACOUCH-504 - Support Couchbase Java SDK 3.
+
+
+Changes in version 3.2.6.RELEASE (2020-03-25)
+---------------------------------------------
+* DATACOUCH-511 - Upgrade to Couchbase Driver 2.7.13.
+* DATACOUCH-508 - Release 3.2.6 (Moore SR6).
+
+
+Changes in version 4.0.0.M4 (2020-03-11)
+----------------------------------------
+* DATACOUCH-511 - Upgrade to Couchbase Driver 2.7.13.
+* DATACOUCH-506 - Release 4.0 M4 (Neumann).
+
+
+Changes in version 3.2.5.RELEASE (2020-02-26)
+---------------------------------------------
+* DATACOUCH-505 - Update Couchbase SDK to 2.7.12.
+* DATACOUCH-501 - Release 3.2.5 (Moore SR5).
+
+
+Changes in version 3.1.16.RELEASE (2020-02-26)
+----------------------------------------------
+* DATACOUCH-500 - Release 3.1.16 (Lovelace SR16).
+
+
+Changes in version 4.0.0.M3 (2020-02-12)
+----------------------------------------
+* DATACOUCH-505 - Update Couchbase SDK to 2.7.12.
+* DATACOUCH-503 - Release 4.0 M3 (Neumann).
+
+
+Changes in version 4.0.0.M2 (2020-01-17)
+----------------------------------------
+* DATACOUCH-502 - Release 4.0 M2 (Neumann).
+
+
+Changes in version 4.0.0.M1 (2020-01-16)
+----------------------------------------
+* DATACOUCH-499 - Bump Major version to 4.0.0.
+* DATACOUCH-498 - Update copyright years to 2020.
+* DATACOUCH-492 - Upgrade to Couchbase Driver 2.7.10.
+* DATACOUCH-489 - Enable JDK 11+ builds.
+* DATACOUCH-485 - Migrate tests to AssertJ.
+* DATACOUCH-483 - Javadoc not deployed.
+* DATACOUCH-482 - Release 4.0 M1 (Neumann).
+
+
+Changes in version 3.2.4.RELEASE (2020-01-15)
+---------------------------------------------
+* DATACOUCH-498 - Update copyright years to 2020.
+* DATACOUCH-494 - Release 3.2.4 (Moore SR4).
+
+
+Changes in version 3.1.15.RELEASE (2020-01-15)
+----------------------------------------------
+* DATACOUCH-498 - Update copyright years to 2020.
+* DATACOUCH-493 - Release 3.1.15 (Lovelace SR15).
+
+
+Changes in version 3.2.3.RELEASE (2019-12-04)
+---------------------------------------------
+* DATACOUCH-492 - Upgrade to Couchbase Driver 2.7.10.
+* DATACOUCH-491 - Release 3.2.3 (Moore SR3).
+
+
+Changes in version 3.1.14.RELEASE (2019-12-04)
+----------------------------------------------
+* DATACOUCH-490 - Release 3.1.14 (Lovelace SR14).
+
+
+Changes in version 3.2.2.RELEASE (2019-11-18)
+---------------------------------------------
+* DATACOUCH-488 - Release 3.2.2 (Moore SR2).
+
+
+Changes in version 3.1.13.RELEASE (2019-11-18)
+----------------------------------------------
+* DATACOUCH-487 - Release 3.1.13 (Lovelace SR13).
+
+
+Changes in version 3.2.1.RELEASE (2019-11-04)
+---------------------------------------------
+* DATACOUCH-483 - Javadoc not deployed.
+* DATACOUCH-481 - Release 3.2.1 (Moore SR1).
+
+
+Changes in version 3.1.12.RELEASE (2019-11-04)
+----------------------------------------------
+* DATACOUCH-480 - Release 3.1.12 (Lovelace SR12).
+
+
+Changes in version 3.2.0.RELEASE (2019-09-30)
+---------------------------------------------
+* DATACOUCH-479 - Use version property for testcontainers in pom.xml.
+* DATACOUCH-478 - Upgrade to Couchbase Driver 2.7.9.
+* DATACOUCH-469 - Release 3.2 GA (Moore).
+
+
+Changes in version 3.1.11.RELEASE (2019-09-30)
+----------------------------------------------
+* DATACOUCH-471 - Add HTTPS entries into spring.schemas.
+* DATACOUCH-468 - Release 3.1.11 (Lovelace SR11).
+
+
+Changes in version 3.2.0.RC3 (2019-09-06)
+-----------------------------------------
+* DATACOUCH-471 - Add HTTPS entries into spring.schemas.
+* DATACOUCH-470 - Release 3.2 RC3 (Moore).
+
+
+Changes in version 3.2.0.RC2 (2019-08-05)
+-----------------------------------------
+* DATACOUCH-466 - Upgrade to Couchbase Driver 2.7.7.
+* DATACOUCH-465 - Adapt to changed API in Commons.
+* DATACOUCH-463 - Revise readme for a consistent structure.
+* DATACOUCH-461 - Upgrade to Apache HTTP client 4.3.6.
+* DATACOUCH-458 - Release 3.2 RC2 (Moore).
+* DATACOUCH-456 - Introduce Jenkins CI.
+* DATACOUCH-206 - Provides a way to set distinct concistency on repository methods.
+
+
+Changes in version 3.1.10.RELEASE (2019-08-05)
+----------------------------------------------
+* DATACOUCH-467 - Upgrade to Couchbase Driver 2.6.2.
+* DATACOUCH-461 - Upgrade to Apache HTTP client 4.3.6.
+* DATACOUCH-460 - Fix NoHTTP errors.
+* DATACOUCH-457 - Release 3.1.10 (Lovelace SR10).
+* DATACOUCH-456 - Introduce Jenkins CI.
+
+
+Changes in version 2.2.23.RELEASE (2019-08-05)
+----------------------------------------------
+* DATACOUCH-461 - Upgrade to Apache HTTP client 4.3.6.
+* DATACOUCH-456 - Introduce Jenkins CI.
+* DATACOUCH-450 - Release 2.2.23 (Ingalls SR23).
+
+
+Changes in version 3.2.0.RC1 (2019-06-14)
+-----------------------------------------
+* DATACOUCH-456 - Introduce Jenkins CI.
+* DATACOUCH-454 - Create security policy readme.
+* DATACOUCH-444 - Release 3.2 RC1 (Moore).
+
+
+Changes in version 3.1.9.RELEASE (2019-06-14)
+---------------------------------------------
+* DATACOUCH-456 - Introduce Jenkins CI.
+* DATACOUCH-449 - Release 3.1.9 (Lovelace SR9).
+
+
+Changes in version 2.2.22.RELEASE (2019-05-13)
+----------------------------------------------
+* DATACOUCH-448 - Release 2.2.22 (Ingalls SR22).
+
+
+Changes in version 3.1.8.RELEASE (2019-05-13)
+---------------------------------------------
+* DATACOUCH-447 - Release 3.1.8 (Lovelace SR8).
+
+
+Changes in version 3.2.0.M4 (2019-05-13)
+----------------------------------------
+* DATACOUCH-445 - Release 3.2 M4 (Moore).
+
+
+Changes in version 2.2.21.RELEASE (2019-05-10)
+----------------------------------------------
+* DATACOUCH-441 - Release 2.2.21 (Ingalls SR21).
+
+
+Changes in version 3.1.7.RELEASE (2019-05-10)
+---------------------------------------------
+* DATACOUCH-443 - Release 3.1.7 (Lovelace SR7).
+
+
+Changes in version 3.2.0.M3 (2019-04-11)
+----------------------------------------
+* DATACOUCH-438 - Move off deprecations in Spring Data Commons.
+* DATACOUCH-436 - Release 3.2 M3 (Moore).
+
+
+Changes in version 3.1.6.RELEASE (2019-04-01)
+---------------------------------------------
+* DATACOUCH-434 - Add reactive repository asciidoc on index link.
+* DATACOUCH-432 - Fix ANSI Joins OneToOne relationship.
+* DATACOUCH-430 - Release 3.1.6 (Lovelace SR6).
+
+
+Changes in version 3.0.14.RELEASE (2019-04-01)
+----------------------------------------------
+* DATACOUCH-434 - Add reactive repository asciidoc on index link.
+* DATACOUCH-428 - Release 3.0.14 (Kay SR14).
+* DATACOUCH-415 - Performance issue when creating instances of CouchbaseDocument.
+
+
+Changes in version 2.2.20.RELEASE (2019-04-01)
+----------------------------------------------
+* DATACOUCH-440 - Release 2.2.20 (Ingalls SR20).
+
+
+Changes in version 2.2.19.RELEASE (2019-04-01)
+----------------------------------------------
+* DATACOUCH-427 - Release 2.2.19 (Ingalls SR19).
+
+
+Changes in version 3.2.0.M2 (2019-03-07)
+----------------------------------------
+* DATACOUCH-435 - Upgrade to Couchbase Driver 2.7.4.
+* DATACOUCH-434 - Add reactive repository asciidoc on index link.
+* DATACOUCH-432 - Fix ANSI Joins OneToOne relationship.
+* DATACOUCH-426 - Introduce Concourse CI.
+* DATACOUCH-425 - Update copyright years to 2019.
+* DATACOUCH-422 - Release 3.2 M2 (Moore).
+* DATACOUCH-415 - Performance issue when creating instances of CouchbaseDocument.
+* DATACOUCH-388 - Add support for ANSI Joins.
+
+
+Changes in version 3.1.5.RELEASE (2019-02-13)
+---------------------------------------------
+* DATACOUCH-429 - Release 3.1.5 (Lovelace SR5).
+* DATACOUCH-415 - Performance issue when creating instances of CouchbaseDocument.
+
+
+Changes in version 3.1.4.RELEASE (2019-01-10)
+---------------------------------------------
+* DATACOUCH-425 - Update copyright years to 2019.
+* DATACOUCH-419 - Release 3.1.4 (Lovelace SR4).
+
+
+Changes in version 3.0.13.RELEASE (2019-01-10)
+----------------------------------------------
+* DATACOUCH-425 - Update copyright years to 2019.
+* DATACOUCH-418 - Release 3.0.13 (Kay SR13).
+
+
+Changes in version 2.2.18.RELEASE (2019-01-10)
+----------------------------------------------
+* DATACOUCH-425 - Update copyright years to 2019.
+* DATACOUCH-417 - Release 2.2.18 (Ingalls SR18).
+
+
+Changes in version 3.2.0.M1 (2018-12-11)
+----------------------------------------
+* DATACOUCH-421 - Simplify reference documentation setup.
+* DATACOUCH-420 - Release 3.2 M1 (Moore).
+* DATACOUCH-413 - Annotated repository query method arguments are not escaped properly.
+
+
+Changes in version 3.1.3.RELEASE (2018-11-27)
+---------------------------------------------
+* DATACOUCH-414 - Release 3.1.3 (Lovelace SR3).
+* DATACOUCH-413 - Annotated repository query method arguments are not escaped properly.
+* DATACOUCH-384 - Date parameters are not converted for N1ql Query.
+
+
+Changes in version 3.0.12.RELEASE (2018-11-27)
+----------------------------------------------
+* DATACOUCH-413 - Annotated repository query method arguments are not escaped properly.
+* DATACOUCH-410 - Release 3.0.12 (Kay SR12).
+* DATACOUCH-384 - Date parameters are not converted for N1ql Query.
+
+
+Changes in version 2.2.17.RELEASE (2018-11-27)
+----------------------------------------------
+* DATACOUCH-413 - Annotated repository query method arguments are not escaped properly.
+* DATACOUCH-411 - Release 2.2.17 (Ingalls SR17).
+* DATACOUCH-384 - Date parameters are not converted for N1ql Query.
+
+
+Changes in version 3.1.2.RELEASE (2018-10-29)
+---------------------------------------------
+* DATACOUCH-409 - Release 3.1.2 (Lovelace SR2).
+
+
+Changes in version 2.2.16.RELEASE (2018-10-15)
+----------------------------------------------
+* DATACOUCH-403 - Release 2.2.16 (Ingalls SR16).
+
+
+Changes in version 3.0.11.RELEASE (2018-10-15)
+----------------------------------------------
+* DATACOUCH-404 - Release 3.0.11 (Kay SR11).
+
+
+Changes in version 3.1.1.RELEASE (2018-10-15)
+---------------------------------------------
+* DATACOUCH-406 - Release 3.1.1 (Lovelace SR1).
+
+
+Changes in version 3.1.0.RELEASE (2018-09-21)
+---------------------------------------------
+* DATACOUCH-405 - Include documentation about Object Mapping Fundamentals.
+* DATACOUCH-400 - Release 3.1 GA (Lovelace).
+
+
+Changes in version 3.0.10.RELEASE (2018-09-10)
+----------------------------------------------
+* DATACOUCH-397 - Release 3.0.10 (Kay SR10).
+
+
+Changes in version 2.2.15.RELEASE (2018-09-10)
+----------------------------------------------
+* DATACOUCH-398 - Release 2.2.15 (Ingalls SR15).
+
+
+Changes in version 3.1.0.RC2 (2018-08-20)
+-----------------------------------------
+* DATACOUCH-396 - Release 3.1 RC2 (Lovelace).
+
+
+Changes in version 2.2.14.RELEASE (2018-07-27)
+----------------------------------------------
+* DATACOUCH-381 - Release 2.2.14 (Ingalls SR14).
+
+
+Changes in version 3.0.9.RELEASE (2018-07-26)
+---------------------------------------------
+* DATACOUCH-391 - Remove EvaluationContextProvider & ExtensionAwareEvaluationContextProvider imports.
+* DATACOUCH-382 - Release 3.0.9 (Kay SR9).
+
+
+Changes in version 3.1.0.RC1 (2018-07-26)
+-----------------------------------------
+* DATACOUCH-395 - Update to Couchbase SDK 2.6.1.
+* DATACOUCH-391 - Remove EvaluationContextProvider & ExtensionAwareEvaluationContextProvider imports.
+* DATACOUCH-390 - Adapt to API changes for immutable entity support.
+* DATACOUCH-380 - Release 3.1 RC1 (Lovelace).
+
+
+Changes in version 3.0.8.RELEASE (2018-06-13)
+---------------------------------------------
+* DATACOUCH-378 - Release 3.0.8 (Kay SR8).
+
+
+Changes in version 2.2.13.RELEASE (2018-06-13)
+----------------------------------------------
+* DATACOUCH-377 - Release 2.2.13 (Ingalls SR13).
+
+
+Changes in version 3.1.0.M3 (2018-05-17)
+----------------------------------------
+* DATACOUCH-379 - Adapt to SpEL extension API changes in Spring Data Commons.
+* DATACOUCH-374 - Release 3.1 M3 (Lovelace).
+
+
+Changes in version 3.0.7.RELEASE (2018-05-08)
+---------------------------------------------
+* DATACOUCH-372 - Release 3.0.7 (Kay SR7).
+
+
+Changes in version 2.2.12.RELEASE (2018-05-08)
+----------------------------------------------
+* DATACOUCH-371 - Release 2.2.12 (Ingalls SR12).
+
+
+Changes in version 3.1.0.M2 (2018-04-13)
+----------------------------------------
+* DATACOUCH-373 - Adapt to API changes in Spring Data Commons.
+* DATACOUCH-370 - Remove explicit declaration of Jackson library versions.
+* DATACOUCH-368 - Export composable repositories via CDI.
+* DATACOUCH-367 - Update to 2.5.6 client.
+* DATACOUCH-364 - Release 3.1 M2 (Lovelace).
+* DATACOUCH-363 - Upgrade to Java client 2.5.5.
+* DATACOUCH-362 - Use dynamic proxy instead of couchbase environment no shutdown proxy.
+* DATACOUCH-322 - Add username for rbac support.
+
+
+Changes in version 3.0.6.RELEASE (2018-04-04)
+---------------------------------------------
+* DATACOUCH-370 - Remove explicit declaration of Jackson library versions.
+* DATACOUCH-367 - Update to 2.5.6 client.
+* DATACOUCH-366 - Release 3.0.6 (Kay SR6).
+* DATACOUCH-362 - Use dynamic proxy instead of couchbase environment no shutdown proxy.
+* DATACOUCH-322 - Add username for rbac support.
+
+
+Changes in version 2.2.11.RELEASE (2018-04-04)
+----------------------------------------------
+* DATACOUCH-370 - Remove explicit declaration of Jackson library versions.
+* DATACOUCH-367 - Update to 2.5.6 client.
+* DATACOUCH-362 - Use dynamic proxy instead of couchbase environment no shutdown proxy.
+* DATACOUCH-359 - Release 2.2.11 (Ingalls SR11).
+
+
+Changes in version 3.0.5.RELEASE (2018-02-28)
+---------------------------------------------
+* DATACOUCH-365 - Release 3.0.5 (Kay SR5).
+
+
+Changes in version 3.0.4.RELEASE (2018-02-19)
+---------------------------------------------
+* DATACOUCH-360 - Release 3.0.4 (Kay SR4).
+
+
+Changes in version 3.1.0.M1 (2018-02-06)
+----------------------------------------
+* DATACOUCH-350 - [Reactive]CouchbaseRepositoryConfigurationExtension does not filter reactive repositories.
+* DATACOUCH-348 - Adapt readme to changes in Spring Data Couchbase 3.0.
+* DATACOUCH-346 - Adapt API changes in Property in test cases.
+* DATACOUCH-340 - Release 3.1 M1 (Lovelace).
+
+
+Changes in version 3.0.3.RELEASE (2018-01-24)
+---------------------------------------------
+* DATACOUCH-353 - Release 3.0.3 (Kay SR3).
+
+
+Changes in version 2.2.10.RELEASE (2018-01-24)
+----------------------------------------------
+* DATACOUCH-352 - Release 2.2.10 (Ingalls SR10).
+
+
+Changes in version 3.0.2.RELEASE (2017-11-27)
+---------------------------------------------
+* DATACOUCH-350 - [Reactive]CouchbaseRepositoryConfigurationExtension does not filter reactive repositories.
+* DATACOUCH-347 - Release 3.0.2 (Kay SR2).
+
+
+Changes in version 2.2.9.RELEASE (2017-11-27)
+---------------------------------------------
+* DATACOUCH-342 - Release 2.2.9 (Ingalls SR9).
+
+
+Changes in version 3.0.1.RELEASE (2017-10-27)
+---------------------------------------------
+* DATACOUCH-346 - Adapt API changes in Property in test cases.
+* DATACOUCH-339 - Release 3.0.1 (Kay SR1).
+
+
+Changes in version 2.2.8.RELEASE (2017-10-11)
+---------------------------------------------
+* DATACOUCH-332 - Release 2.2.8 (Ingalls SR8).
+
+
+Changes in version 3.0.0.RELEASE (2017-10-02)
+---------------------------------------------
+* DATACOUCH-338 - Add explicit automatic module name for Java 9.
+* DATACOUCH-336 - Upgrade to OpenWebBeans 2.0.1.
+* DATACOUCH-334 - Release 3.0 GA (Kay).
+
+
+Changes in version 3.0.0.RC3 (2017-09-11)
+-----------------------------------------
+* DATACOUCH-330 - Multiple Spring Data modules clash with one another.
+* DATACOUCH-326 - Release 3.0 RC3 (Kay).
+
+
+Changes in version 2.2.7.RELEASE (2017-09-11)
+---------------------------------------------
+* DATACOUCH-330 - Multiple Spring Data modules clash with one another.
+* DATACOUCH-327 - Release 2.2.7 (Ingalls SR7).
+
+
+Changes in version 2.2.6.RELEASE (2017-07-26)
+---------------------------------------------
+* DATACOUCH-324 - Release 2.2.6 (Ingalls SR6).
+
+
+Changes in version 3.0.0.RC2 (2017-07-25)
+-----------------------------------------
+* DATACOUCH-325 - Release 3.0 RC2 (Kay).
+
+
+Changes in version 3.0.0.RC1 (2017-07-25)
+-----------------------------------------
+* DATACOUCH-323 - Inherit Project Reactor version from dependency management.
+* DATACOUCH-320 - Adopt to Optional changes in Spring Data Commons.
+* DATACOUCH-316 - Release 3.0 RC1 (Kay).
+
+
+Changes in version 2.2.5.RELEASE (2017-07-24)
+---------------------------------------------
+* DATACOUCH-313 - Release 2.2.5 (Ingalls SR5).
+* DATACOUCH-310 - N1qlQueryCreator should consider making enums String values when building n1ql expressions.
+
+
+Changes in version 3.0.0.M4 (2017-06-14)
+----------------------------------------
+* DATACOUCH-315 - Upgrade to couchbase client 2.4.6.
+* DATACOUCH-314 - Adopt to ReactiveCrudRepository.findById(Publisher) and existsById(Publisher).
+* DATACOUCH-311 - Upgrade to Reactor 3.1 M2.
+* DATACOUCH-308 - Release 3.0 M4 (Kay).
+
+
+Changes in version 2.2.4.RELEASE (2017-06-08)
+---------------------------------------------
+* DATACOUCH-301 - Release 2.2.4 (Ingalls SR4).
+
+
+Changes in version 2.1.11.RELEASE (2017-06-07)
+----------------------------------------------
+* DATACOUCH-300 - Release 2.1.11 (Hopper SR11).
+
+
+Changes in version 3.0.0.M3 (2017-05-09)
+----------------------------------------
+* DATACOUCH-305 - Adapt to API changes in repository interfaces.
+* DATACOUCH-304 - Remove support for JodaTime's deprecated DateMidnight.
+* DATACOUCH-302 - Adapt to moved CustomConversions to Spring Data Commons.
+* DATACOUCH-293 - Adapt to API changes in Reactor 3.1.
+* DATACOUCH-292 - Release 3.0 M3 (Kay).
+* DATACOUCH-290 - Update to latest java client version 2.4.4.
+* DATACOUCH-276 - Ordering by embeded field doesn't work.
+* DATACOUCH-275 - Auto generate values for document ids.
+* DATACOUCH-263 - Unable to save objects with LocalDateTime fields.
+* DATACOUCH-90 - Support for java.time for DateConverters.
+
+
+Changes in version 2.1.10.RELEASE (2017-04-19)
+----------------------------------------------
+* DATACOUCH-299 - Revert upgrades to 2.4 driver.
+* DATACOUCH-298 - Release 2.1.10 (Hopper SR10).
+
+
+Changes in version 2.2.3.RELEASE (2017-04-19)
+---------------------------------------------
+* DATACOUCH-299 - Revert upgrades to 2.4 driver.
+* DATACOUCH-297 - Release 2.2.3 (Ingalls SR3).
+
+
+Changes in version 2.1.9.RELEASE (2017-04-19)
+---------------------------------------------
+* DATACOUCH-290 - Update to latest java client version 2.4.4.
+* DATACOUCH-284 - Release 2.1.9 (Hopper SR9).
+* DATACOUCH-276 - Ordering by embeded field doesn't work.
+* DATACOUCH-275 - Auto generate values for document ids.
+* DATACOUCH-90 - Support for java.time for DateConverters.
+
+
+Changes in version 2.2.2.RELEASE (2017-04-19)
+---------------------------------------------
+* DATACOUCH-290 - Update to latest java client version 2.4.4.
+* DATACOUCH-283 - Release 2.2.2 (Ingalls SR2).
+* DATACOUCH-276 - Ordering by embeded field doesn't work.
+* DATACOUCH-275 - Auto generate values for document ids.
+* DATACOUCH-90 - Support for java.time for DateConverters.
+
+
+Changes in version 3.0.0.M2 (2017-04-04)
+----------------------------------------
+* DATACOUCH-289 - Adapt to API changes in RepositoryConfigurationExtensionSupport.
+* DATACOUCH-278 - Table reference incorrect in repository doc.
+* DATACOUCH-274 - Remove references to single-argument assertion methods of Spring.
+* DATACOUCH-273 - Integrate Data Commons Java 8 upgrade branch.
+* DATACOUCH-270 - Update project documentation with the CLA tool integration.
+* DATACOUCH-265 - SpEL expressions for 'Pageable' and 'Sort'.
+* DATACOUCH-262 - Adapt API in RepositoryFactoryBeanSupport implementation.
+* DATACOUCH-261 - Register repository factory in spring.factories for multi-store support.
+* DATACOUCH-259 - Release 3.0 M2 (Kay).
+* DATACOUCH-251 - Keyword "Or" not working properly.
+* DATACOUCH-246 - Add support for projections on repository query methods.
+* DATACOUCH-146 - Add experimental Reactive support.
+
+
+Changes in version 2.1.8.RELEASE (2017-03-02)
+---------------------------------------------
+* DATACOUCH-274 - Remove references to single-argument assertion methods of Spring.
+* DATACOUCH-271 - Release 2.1.8 (Hopper SR8).
+
+
+Changes in version 2.2.1.RELEASE (2017-03-02)
+---------------------------------------------
+* DATACOUCH-278 - Table reference incorrect in repository doc.
+* DATACOUCH-274 - Remove references to single-argument assertion methods of Spring.
+* DATACOUCH-272 - Release 2.2.1 (Ingalls SR1).
+* DATACOUCH-265 - SpEL expressions for 'Pageable' and 'Sort'.
+
+
+Changes in version 2.1.7.RELEASE (2017-01-26)
+---------------------------------------------
+* DATACOUCH-266 - Release 2.1.7 (Hopper SR7).
+
+
+Changes in version 2.2.0.RELEASE (2017-01-26)
+---------------------------------------------
+* DATACOUCH-270 - Update project documentation with the CLA tool integration.
+* DATACOUCH-267 - Release 2.2 GA (Ingalls).
+
+
+Changes in version 2.1.6.RELEASE (2016-12-21)
+---------------------------------------------
+* DATACOUCH-254 - Release 2.1.6 (Hopper SR6).
+* DATACOUCH-251 - Keyword "Or" not working properly.
+* DATACOUCH-237 - Query method with pagination + sort creates invalid count statement.
+
+
+Changes in version 2.2.0.RC1 (2016-12-21)
+-----------------------------------------
+* DATACOUCH-262 - Adapt API in RepositoryFactoryBeanSupport implementation.
+* DATACOUCH-261 - Register repository factory in spring.factories for multi-store support.
+* DATACOUCH-251 - Keyword "Or" not working properly.
+* DATACOUCH-246 - Add support for projections on repository query methods.
+* DATACOUCH-243 - CouchbaseTemplate.doRemove() should handle exceptions as the same way with doPersist().
+* DATACOUCH-241 - Document mixing SpEL and N1QL placeholders.
+* DATACOUCH-239 - Allow configurable expiry in @Document.
+* DATACOUCH-238 - Release 2.2 RC1 (Ingalls).
+* DATACOUCH-237 - Query method with pagination + sort creates invalid count statement.
+* DATACOUCH-235 - WARNING: More than 1 Couchbase Environments found (2) with <couchbase:env/>.
+
+
+Changes in version 3.0.0.M1 (2016-11-23)
+----------------------------------------
+* DATACOUCH-256 - Set up 3.0 development.
+* DATACOUCH-255 - Release 3.0 M1 (Kay).
+
+
+Changes in version 2.1.5.RELEASE (2016-11-03)
+---------------------------------------------
+* DATACOUCH-253 - Release 2.1.5 (Hopper SR5).
+
+
+Changes in version 2.1.4.RELEASE (2016-09-29)
+---------------------------------------------
+* DATACOUCH-249 - Release 2.1.4 (Hopper SR4).
+
+
+Changes in version 1.4.6.RELEASE (2016-09-29)
+---------------------------------------------
+* DATACOUCH-252 - Release 1.4.6 (Gosling SR6).
+
+
+Changes in version 1.4.5.RELEASE (2016-09-20)
+---------------------------------------------
+* DATACOUCH-248 - Ignore tests not running on AWS to security restrictions.
+* DATACOUCH-247 - Release 1.4.5 (Gosling SR5).
+
+
+Changes in version 2.1.3.RELEASE (2016-09-20)
+---------------------------------------------
+* DATACOUCH-236 - Release 2.1.3 (Hopper SR3).
+
+
+Changes in version 2.2.0.M1 (2016-07-27)
+----------------------------------------
+* DATACOUCH-231 - Bump SDK to 2.2.7 for Hopper SR2, Ingals.
+* DATACOUCH-229 - Some N1QL/index error messages checked by DATACOUCH are changing in Couchbase Server 4.5.
+* DATACOUCH-228 - findByView could be made more performant by using async API internally.
+* DATACOUCH-227 - findByView won't use retainOrder parameter if RawJsonDocument target is not used.
+* DATACOUCH-226 - Add Strict @Field Validation in MappingCouchbaseConverter.
+* DATACOUCH-225 - spring-data-couchbase 2.x series incompatible with Couchbase SDK > 2.2.3.
+* DATACOUCH-224 - Improve concurrent save/insert optimistic locking.
+* DATACOUCH-221 - Release 2.2 M1 (Ingalls).
+
+
+Changes in version 2.1.2.RELEASE (2016-06-15)
+---------------------------------------------
+* DATACOUCH-231 - Bump SDK to 2.2.7 for Hopper SR2, Ingals.
+* DATACOUCH-229 - Some N1QL/index error messages checked by DATACOUCH are changing in Couchbase Server 4.5.
+* DATACOUCH-228 - findByView could be made more performant by using async API internally.
+* DATACOUCH-227 - findByView won't use retainOrder parameter if RawJsonDocument target is not used.
+* DATACOUCH-225 - spring-data-couchbase 2.x series incompatible with Couchbase SDK > 2.2.3.
+* DATACOUCH-224 - Improve concurrent save/insert optimistic locking.
+* DATACOUCH-222 - Release 2.1.2 (Hopper SR2).
+
+
+Changes in version 2.1.1.RELEASE (2016-04-06)
+---------------------------------------------
+* DATACOUCH-220 - Release 2.1.1 (Hopper SR1).
+
+
+Changes in version 2.1.0.RELEASE (2016-04-06)
+---------------------------------------------
+* DATACOUCH-219 - Add pull request template.
+* DATACOUCH-218 - Release 2.1 GA (Hopper).
+
+
+Changes in version 2.1.0.RC1 (2016-03-18)
+-----------------------------------------
+* DATACOUCH-216 - Add template getter on CouchbaseRepository interface.
+* DATACOUCH-215 - isolate dependency to core SDK beans in a CouchbaseConfigurer.
+* DATACOUCH-214 - N1qlUtils.createSort does not Sort.Order::isIgnoreCase.
+* DATACOUCH-213 - Release 2.1 RC1 (Hopper).
+* DATACOUCH-212 - Optimistic Locking is not working when using Repository save method.
+* DATACOUCH-211 - Pageable.getSort() value not honoured in N1qlCouchbaseRepository.
+* DATACOUCH-209 - Default Consistency should be READ_YOUR_OWN_WRITES.
+* DATACOUCH-208 - Allow CouchbaseConfiguration couchbaseTemplate to be any CouchbaseOperations.
+* DATACOUCH-207 - Make BeanNames constants public.
+* DATACOUCH-204 - Make sure package-info.java exist for all packages.
+* DATACOUCH-203 - CDI support can fail due to Set.toString() used as Map key.
+* DATACOUCH-77 - Links to documentation.
+
+
+Changes in version 1.4.4.RELEASE (2016-02-23)
+---------------------------------------------
+* DATACOUCH-205 - Release 1.4.4 (Gosling SR4).
+
+
+Changes in version 2.1.0.M1 (2016-02-12)
+----------------------------------------
+* DATACOUCH-202 - Adapt to API changes in Spring Data Commons QueryMethod.
+* DATACOUCH-198 - Add code of conduct.
+* DATACOUCH-195 - Release 2.1 M1 (Hopper).
+* DATACOUCH-181 - Adapt to API changes in Spring Data Commons.
+* DATACOUCH-115 - _class attribute doesn't work with couchbase sync gateway.
+
+
+Changes in version 2.0.0.RELEASE (2016-02-08)
+---------------------------------------------
+* DATACOUCH-180 - Named N1QL param doesn't work.
+* DATACOUCH-184 - Add support for customizing repository base class.
+* DATACOUCH-185 - Base repository methods should also use the configured default consistency.
+* DATACOUCH-186 - Template methods based on stale indexes should not take deleted docs into account.
+* DATACOUCH-187 - Support long return type in @Query when selecting single aggregation.
+* DATACOUCH-188 - Update Couchbase java-client to latest version (2.2.3).
+* DATACOUCH-189 - Document how to extend a repository / change the base class.
+* DATACOUCH-190 - Give an example of SpEL support in documentation.
+* DATACOUCH-192 - Ensure no bean created by SDC clashes with other datastores by having couchbase in their name.
+* DATACOUCH-196 - ViewIndexed emits ids so that findAll(ids) works.
+* DATACOUCH-199 - Auto Index creation should be opt-in.
+* DATACOUCH-201 - Release 2.0 GA.
+
+
+Changes in version 2.0.0.RC1 (2015-12-22)
+-----------------------------------------
+* DATACOUCH-159 - Response time degradation on document conversion with a lot of longs inside.
+* DATACOUCH-172 - PagingAndSorting doesn't use configurable consistency.
+* DATACOUCH-174 - Fix xml creation of repositories.
+* DATACOUCH-158 - Take expiry as a long+TimeUnit in Document annotation.
+* DATACOUCH-168 - Support non-numerical return types for view reduce.
+* DATACOUCH-170 - N1QL documentation fixes.
+* DATACOUCH-173 - some integration tests don't pass on empty bucket.
+* DATACOUCH-176 - Automatic false positive elimination in geo queries.
+* DATACOUCH-177 - Upgrade SDK dependency to 2.2.2.
+* DATACOUCH-138 - Add support for paging and sorting.
+* DATACOUCH-165 - Add support for GeoSpatial querying using views.
+* DATACOUCH-166 - Support SpEL in inline N1QL queries.
+* DATACOUCH-169 - Offer main indexes creation as an option in the configuration.
+* DATACOUCH-163 - integration test data generation should take typeKey into account.
+* DATACOUCH-164 - SDC 2.0.0 must rely on stable version of the SDK.
+* DATACOUCH-183 - Release 2.0 RC1.
+
+
+Changes in version 1.4.2.RELEASE (2015-12-18)
+---------------------------------------------
+* DATACOUCH-182 - Release 1.4.2 (Gosling).
+
+
+Changes in version 1.4.1.RELEASE (2015-11-15)
+---------------------------------------------
+* DATACOUCH-175 - Release 1.4.1 (Gosling).
+
+
+Changes in version 1.2.4.RELEASE (2015-10-14)
+---------------------------------------------
+* DATACOUCH-167 - Release 1.2.4 (Evans).
+
+
+Changes in version 1.4.0.RELEASE (2015-09-01)
+---------------------------------------------
+* DATACOUCH-160 - Release 1.4 GA (Gosling).
+* DATACOUCH-159 - Response time degradation on document conversion with a lot of longs inside.
+
+
+Changes in version 2.0.0.M2 (2015-08-04)
+----------------------------------------
+* DATACOUCH-134 - Support Bucket Shadowing.
+* DATACOUCH-135 - Migrate to Couchbase SDK 2.2.0-dp, with support for N1QL in template.
+* DATACOUCH-136 - Add N1QL query annotation.
+* DATACOUCH-137 - Allow query derivation from @N1QL annotated methods.
+* DATACOUCH-139 - Implement @View as minimalistic query derivation.
+* DATACOUCH-140 - Use Converter on method parameters when deriving query.
+* DATACOUCH-141 - Change query lookup order and make N1QL default.
+* DATACOUCH-142 - Document changes from 1.4 to 2.0 and migration cheat sheet.
+* DATACOUCH-143 - Log repository queries in DEBUG.
+* DATACOUCH-144 - Detect N1QL is unsupported and fail fast.
+* DATACOUCH-145 - Use SDK's Field/Id annotations.
+* DATACOUCH-148 - Allow global configuration of default staleness parameter for view queries.
+* DATACOUCH-149 - Switch from BeanWrapper to PersistentPropertyAccessor.
+* DATACOUCH-150 - Release version 2.0 M1.
+* DATACOUCH-152 - Bump SDK version to 2.2.0-dp2 and make adjustements.
+* DATACOUCH-154 - Use consistent method to guess desing document.
+* DATACOUCH-155 - Escape every field name in N1QL queries.
+* DATACOUCH-156 - Filter on type information in generated N1QL queries.
+
+Changes in version 1.4.0.RC1 (2015-08-04)
+-----------------------------------------
+* DATACOUCH-157 - Release 1.4 RC1 (Gosling).
+* DATACOUCH-151 - NullPointerException on auto-boxing in CouchbaseTemplate.
+* DATACOUCH-149 - Switch from BeanWrapper to PersistentPropertyAccessor.
+* DATACOUCH-133 - Fix typos in README.
+* DATACOUCH-129 - Ensure Spring Framework 4.2 compatibility.
+
+Changes in version 1.3.2.RELEASE (2015-07-28)
+---------------------------------------------
+* DATACOUCH-153 - Release 1.3.2 (Fowler).
+* DATACOUCH-151 - NullPointerException on auto-boxing in CouchbaseTemplate.
+
+Changes in version 1.1.6.RELEASE (2015-07-01)
+---------------------------------------------
+* DATACOUCH-133 - Fix typos in README.
+* DATACOUCH-130 - Release 1.1.6 (Dijkstra).
+* DATACOUCH-129 - Ensure Spring Framework 4.2 compatibility.
+
+Changes in version 1.2.3.RELEASE (2015-07-01)
+---------------------------------------------
+* DATACOUCH-133 - Fix typos in README.
+* DATACOUCH-131 - Release 1.2.3 (Evans).
+* DATACOUCH-129 - Ensure Spring Framework 4.2 compatibility.
+
+
+Changes in version 1.3.1.RELEASE (2015-06-30)
+---------------------------------------------
+* DATACOUCH-133 - Fix typos in README.
+* DATACOUCH-132 - Release 1.3.1 (Fowler).
+* DATACOUCH-129 - Ensure Spring Framework 4.2 compatibility.
+
+
+Changes in version 1.4.0.M1 (2015-06-02)
+----------------------------------------
+* DATACOUCH-127 - Release 1.4 M1 (Gosling).
+* DATACOUCH-126 - @EnableCouchbaseRespositories does not implement the `repositoryBaseClass` attribute.
+
+
+Changes in version 1.3.0.RELEASE (2015-03-23)
+---------------------------------------------
+* DATACOUCH-122 - Release 1.3 GA.
+
+
+Changes in version 1.3.0.RC1 (2015-03-05)
+-----------------------------------------
+* DATACOUCH-121 - Release 1.3 RC1.
+* DATACOUCH-120 - Update Java SDK to 1.4.7.
+* DATACOUCH-117 - Fix shaky builds.
+* DATACOUCH-110 - Custom converted objects in map/collection property are not serialized correctly.
+* DATACOUCH-109 - Add support for custom implementations in CDI repositories.
+* DATACOUCH-102 - Pass source object to AbstractCouchbaseEventListener's onBeforeDelete and onAfterDelete.
+* DATACOUCH-25 - Cache TTL (Time To Live) property required.
+
+
+Changes in version 1.2.2.RELEASE (2015-01-28)
+---------------------------------------------
+* DATACOUCH-119 - Release 1.2.2.
+* DATACOUCH-117 - Fix shaky builds.
+
+
+Changes in version 1.1.5.RELEASE (2015-01-27)
+---------------------------------------------
+* DATACOUCH-118 - Release 1.1.5.
+* DATACOUCH-117 - Fix shaky builds.
+
+
+Changes in version 1.3.0.M1 (2014-12-01)
+----------------------------------------
+* DATACOUCH-116 - Release 1.3 M1.
+* DATACOUCH-113 - Ensure Spring 4.1 compatibility.
+
+
+Changes in version 1.2.1.RELEASE (2014-10-30)
+---------------------------------------------
+* DATACOUCH-114 - Release 1.2.1.
+* DATACOUCH-113 - Ensure Spring 4.1 compatibility.
+
+
+Changes in version 1.2.0.RELEASE (2014-09-05)
+---------------------------------------------
+* DATACOUCH-108 - Make sure Spring Data Couchbase can be built using a JDK 8.
+* DATACOUCH-107 - Release 1.2 GA.
+* DATACOUCH-105 - Update to Java SDK 1.4.4.
+* DATACOUCH-103 - Polish reference documentation.
+* DATACOUCH-97 - Support for createRepositoryFactory(CouchbaseOperations operations), getCouchbaseClient().
+* DATACOUCH-94 - Move to FieldNamingStrategy SPI in Spring Data Commons.
+
+
+Changes in version 1.1.4.RELEASE (2014-08-27)
+---------------------------------------------
+* DATACOUCH-106 - Release 1.1.4.
+
+
+Changes in version 1.2.0.RC1 (2014-08-13)
+-----------------------------------------
+* DATACOUCH-101 - Release 1.2 RC1.
+* DATACOUCH-100 - Move to Asciidoctor for reference documentation.
+
+
+Changes in version 1.1.2.RELEASE (2014-07-28)
+---------------------------------------------
+* DATACOUCH-99 - Release 1.1.2.
+
+
+Changes in version 1.2.0.M1 (2014-07-10)
+----------------------------------------
+* DATACOUCH-96 - Release 1.2 M1.
+
+
+Changes in version 1.1.1.RELEASE (2014-06-30)
+---------------------------------------------
+* DATACOUCH-95 - Release 1.1.1.
+
+
+Changes in version 1.1.0.RELEASE (2014-05-20)
+---------------------------------------------
+* DATACOUCH-89 - Upgrade Java SDK to 1.4.1.
+* DATACOUCH-88 - Upgrade to latest HttpClient for Spring 4 build compatibility.
+* DATACOUCH-87 - Release 1.1 GA.
+* DATACOUCH-86 - Fix compile errors against Spring 4's Cache interface.
+
+
+Changes in version 1.1.0.RC1 (2014-05-02)
+-----------------------------------------
+* DATACOUCH-84 - Release 1.1 RC1.
+* DATACOUCH-82 - Allow custom FieldNamingStrategies.
+
+
+Release Notes - Spring Data Couchbase - Version 1.1 M1 - 2014-03-31
+-------------------------------------------------------------------
+** Task
+    * [DATACOUCH-78] - Adapt to changes in BeanWrapper generics
+    * [DATACOUCH-79] - Release 1.1 M1
+
+Release Notes - Spring Data Couchbase - Version 1.0.0.RELEASE - 2014-03-13
+--------------------------------------------------------------------------
+** Bug
+    * [DATACOUCH-50] - findAll(Iterable<ID> ids) in CrudRepository throws java.util.concurrent.ExecutionException
+    * [DATACOUCH-61] - NPE when saving object containing Joda DateTime field
+    * [DATACOUCH-69] - Can't deserialize Date field
+    * [DATACOUCH-70] - Bundle could not be resolved in non J2SE-1.6 runtime environment
+
+** Improvement
+    * [DATACOUCH-55] - Allow support for custom object mapping (like Date objects)
+    * [DATACOUCH-72] - Update Couchbase SDK , Jackson and Spring-Data-Commons
+    * [DATACOUCH-75] - Trim off find on custom repository finder methods.
+    * [DATACOUCH-76] - Upgrade to latest spring-data-commons and parent
+
+** New Feature
+    * [DATACOUCH-71] - Support for JS303 Validation (& template events)
+
+** Task
+    * [DATACOUCH-73] - Release 1.0 GA
+    * [DATACOUCH-74] - Initial Documentation for 1.0 GA
+
+Release Notes - Spring Data Couchbase - Version 1.0 RC1 - 2014-02-06
+--------------------------------------------------------------------
+** Bug
+    * [DATACOUCH-30] - ObjectMapper configuration must be supported
+    * [DATACOUCH-44] - Not consistent unit tests
+    * [DATACOUCH-47] - Connecting to multiple buckets fails
+    * [DATACOUCH-51] - update(java.util.Collection) adds new document object
+    * [DATACOUCH-52] - CouchbaseCacheManager does not shutdown couchbase connections
+    * [DATACOUCH-53] - NPE on CouchbaseCache puting null
+    * [DATACOUCH-58] - Allow null values for List elements and Map values
+
+** Improvement
+    * [DATACOUCH-14] - Enable default support for slf4j in couchbase-client
+    * [DATACOUCH-20] - @View annotation on repository finder methods
+    * [DATACOUCH-49] - Enhance @View "Query" params customization
+    * [DATACOUCH-56] - Update Couchbase Client to 1.2.3
+    * [DATACOUCH-57] - Allow for configuring of CouchbaseClient with property/SPEL expressions
+    * [DATACOUCH-60] - Upgrade Dependencies (Couchbase, Jackson, Commons)
+    * [DATACOUCH-62] - Upgrade couchbase java SDK to latest stable version
+    * [DATACOUCH-64] - Add View query methods to repositories
+    * [DATACOUCH-65] - Add @Version support on top of CAS for optimistic locking
+
+** New Feature
+    * [DATACOUCH-63] - support optimistic locking through CAS methods
+
+** Task
+    * [DATACOUCH-66] - Release 1.0 RC1
+
+Release Notes - Spring Data Couchbase - Version 1.0 M2 - 2013-11-14
+-------------------------------------------------------------------
+** Bug
+    * [DATACOUCH-25] - Cache TTL (Time To Live) property required.
+    * [DATACOUCH-27] - MappingCouchbaseConverter skips ID field in read operation
+    * [DATACOUCH-34] - Can't deserialize long/Long/Date fields
+    * [DATACOUCH-35] - Can't deserialize Class fields
+    * [DATACOUCH-36] - Can't store a map with null value
+    * [DATACOUCH-37] - Refactor Deprecated JUnit Asserts
+    * [DATACOUCH-38] - Can't deserialize enum
+    * [DATACOUCH-39] - Fix bundlor compile issues
+    * [DATACOUCH-42] - spring-data threads should be daemon threads
+    * [DATACOUCH-43] - Bad handling of non ASCII Strings
+
+** Improvement
+    * [DATACOUCH-16] - Allow View customization through @View annotations
+    * [DATACOUCH-31] - Ignore IntelliJ IDE files
+    * [DATACOUCH-32] - Upgrade Couchbase SDK to 1.2.0
+    * [DATACOUCH-40] - Make ClusterInfo more reliable (long/int)
+    * [DATACOUCH-41] - Update Couchbase SDK to 1.2.1
+
+** Task
+    * [DATACOUCH-45] - Upgrade Couchbase Client to 1.2.2
+    * [DATACOUCH-46] - Release 1.0 M2
+
+Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
+-------------------------------------------------------------------
+** Bug
+    * [DATACOUCH-11] - Upgrade Jackson to 2.2 Release
+    * [DATACOUCH-22] - Spring Data Couchbase build fails when not having bundlor maven plugin
+
+** Improvement
+    * [DATACOUCH-5] - Add AbstractCouchbaseConfiguration for JavaConfig
+    * [DATACOUCH-6] - Add simple support for XML configurations
+    * [DATACOUCH-7] - Implement find* methods on SimpleCouchbaseRepository
+    * [DATACOUCH-12] - Support arbitrary Objects on encode/decode
+    * [DATACOUCH-13] - Upgrade Couchbase-Client to 1.1.7
+    * [DATACOUCH-15] - Upgrade Couchbase Java Client to 1.1.8
+    * [DATACOUCH-17] - Make sure default template ops are sync & exceptions are mapped
+    * [DATACOUCH-19] - Deploy Snapshots & Integrate CI
+    * [DATACOUCH-21] - Improve API Documentation & Formatting before M1
+    * [DATACOUCH-23] - Make Testsuite clean the bucket on every run.
+    * [DATACOUCH-24] - Add testing for view-based operations on template and repository.
+    * [DATACOUCH-26] - Upgrade Couchbase Java Client to 1.1.9
+
+** Task
+    * [DATACOUCH-1] - Use Spring Data Build parent
+    * [DATACOUCH-2] - Release 1.0 M1
+    * [DATACOUCH-3] - Rename packages to org.springframework.data.couchbase
+    * [DATACOUCH-4] - Add Apache 2 license headers
+    * [DATACOUCH-8] - Overhaul README with uptodate information
+    * [DATACOUCH-9] - Add View query support to the Template
+    * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

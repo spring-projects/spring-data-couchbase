@@ -1,0 +1,529 @@
+[[couchbase.repository]]
+= Couchbase repositories
+
+The goal of Spring Data repository abstraction is to significantly reduce the amount of boilerplate code required to implement data access layers for various persistence stores.
+
+By default, operations are backed by Key/Value if they are single-document operations and the ID is known.
+For all other operations by default N1QL queries are generated, and as a result proper indexes must be created for performant data access.
+
+Note that you can tune the consistency you want for your queries (see xref:couchbase/repository.adoc#couchbase.repository.consistency[Querying with consistency]) and have different repositories backed by different buckets (see <<couchbase.repository.multibucket>>)
+
+[[couchbase.repository.configuration]]
+== Configuration
+
+While support for repositories is always present, you need to enable them in general or for a specific namespace.
+If you extend `AbstractCouchbaseConfiguration`, just use the `@EnableCouchbaseRepositories` annotation.
+It provides lots of possible options to narrow or customize the search path, one of the most common ones is `basePackages`.
+
+Also note that if you are running inside spring boot, the autoconfig support already sets up the annotation for you so you only need to use it if you want to override the defaults.
+
+.Annotation-Based Repository Setup
+====
+[source,java]
+----
+@Configuration
+@EnableCouchbaseRepositories(basePackages = {"com.couchbase.example.repos"})
+public class Config extends AbstractCouchbaseConfiguration {
+    //...
+}
+----
+====
+
+An advanced usage is described in <<couchbase.repository.multibucket>>.
+
+[[couchbase.repository.configuration.dsl]]
+=== QueryDSL Configuration
+Spring Data Couchbase supports QueryDSL for building type-safe queries. To enable code generation, setting `CouchbaseAnnotationProcessor` as an annotation processor is required.
+Additionally, the runtime needs querydsl-apt to enable QueryDSL on repositories.
+
+.Maven Configuration Example
+====
+[source,xml]
+----
+    . existing depdendencies including those required for spring-data-couchbase
+    .
+    .
+    <dependency>
+        <groupId>com.querydsl</groupId>
+        <artifactId>querydsl-apt</artifactId>
+        <version>${querydslVersion}</version>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>annotation-processing</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <proc>only</proc>
+                            <annotationProcessors>
+                                <annotationProcessor>org.springframework.data.couchbase.repository.support.CouchbaseAnnotationProcessor</annotationProcessor>
+                            </annotationProcessors>
+                            <generatedTestSourcesDirectory>target/generated-sources</generatedTestSourcesDirectory>
+                            <compilerArgs>
+                                <arg>-Aquerydsl.logInfo=true</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+        </plugin>
+    </plugins>
+</build>
+
+----
+====
+
+.Gradle Configuration Example
+====
+[source,groovy,indent=0,subs="verbatim,quotes",role="secondary"]
+----
+dependencies {
+    annotationProcessor 'com.querydsl:querydsl-apt:${querydslVersion}'
+    annotationProcessor 'org.springframework.data:spring-data-couchbase'
+    testAnnotationProcessor 'com.querydsl:querydsl-apt:${querydslVersion}'
+    testAnnotationProcessor 'org.springframework.data:spring-data-couchbase'
+}
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += [
+            "-processor",
+            "org.springframework.data.couchbase.repository.support.CouchbaseAnnotationProcessor"]
+}
+----
+====
+
+[[couchbase.repository.usage]]
+== Usage
+
+In the simplest case, your repository will extend the `CrudRepository<T, String>`, where T is the entity that you want to expose.
+Let's look at a repository for a UserInfo:
+
+.A UserInfo repository
+====
+[source,java]
+----
+import org.springframework.data.repository.CrudRepository;
+
+public interface UserRepository extends CrudRepository<UserInfo, String> {
+}
+----
+====
+
+Please note that this is just an interface and not an actual class.
+In the background, when your context gets initialized, actual implementations for your repository descriptions get created and you can access them through regular beans.
+This means you will save lots of boilerplate code while still exposing full CRUD semantics to your service layer and application.
+
+Now, let's imagine we `@Autowire` the `UserRepository` to a class that makes use of it.
+What methods do we have available?
+
+[cols="2",options="header"]
+.Exposed methods on the UserRepository
+|===
+| Method
+| Description
+
+| UserInfo save(UserInfo entity)
+| Save the given entity.
+
+| Iterable<UserInfo> save(Iterable<UserInfo> entity)
+| Save the list of entities.
+
+| UserInfo findOne(String id)
+| Find a entity by its unique id.
+
+| boolean exists(String id)
+| Check if a given entity exists by its unique id.
+
+| Iterable<UserInfo> findAll()
+| Find all entities by this type in the bucket.
+
+| Iterable<UserInfo> findAll(Iterable<String> ids)
+| Find all entities by this type and the given list of ids.
+
+| long count()
+| Count the number of entities in the bucket.
+
+| void delete(String id)
+| Delete the entity by its id.
+
+| void delete(UserInfo entity)
+| Delete the entity.
+
+| void delete(Iterable<UserInfo> entities)
+| Delete all given entities.
+
+| void deleteAll()
+| Delete all entities by type in the bucket.
+|===
+
+Now that's awesome!
+Just by defining an interface we get full CRUD functionality on top of our managed entity.
+
+While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones.
+You can do this by adding method declarations to your interface, which will be automatically resolved to requests in the background, as we'll see in the next sections.
+
+[[couchbase.repository.querying]]
+== Repositories and Querying
+
+[[couchbase.repository.n1ql]]
+=== N1QL based querying
+
+Prerequisite is to have created a PRIMARY INDEX on the bucket where the entities will be stored.
+
+Here is an example:
+
+.An extended UserInfo repository with N1QL queries
+====
+[source,java]
+----
+public interface UserRepository extends CrudRepository<UserInfo, String> {
+
+    @Query("#{#n1ql.selectEntity} WHERE role = 'admin' AND #{#n1ql.filter}")
+    List<UserInfo> findAllAdmins();
+
+    List<UserInfo> findByFirstname(String fname);
+}
+----
+====
+
+Here we see two N1QL-backed ways of querying.
+
+The first method uses the `Query` annotation to provide a N1QL statement inline.
+SpEL (Spring Expression Language) is supported by surrounding SpEL expression blocks between `#{` and `}`.
+A few N1QL-specific values are provided through SpEL:
+
+- `#n1ql.selectEntity` allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
+- `#n1ql.filter` in the WHERE clause adds a criteria matching the entity type with the field that Spring Data uses to store type information.
+- `#n1ql.bucket` will be replaced by the name of the bucket the entity is stored in, escaped in backticks.
+- `#n1ql.scope` will be replaced by the name of the scope the entity is stored in, escaped in backticks.
+- `#n1ql.collection` will be replaced by the name of the collection the entity is stored in, escaped in backticks.
+- `#n1ql.fields` will be replaced by the list of fields (eg. for a SELECT clause) necessary to reconstruct the entity.
+- `#n1ql.delete` will be replaced by the `delete from` statement.
+- `#n1ql.returning` will be replaced by returning clause needed for reconstructing entity.
+
+IMPORTANT: We recommend that you always use the `selectEntity` SpEL and a WHERE clause with a `filter` SpEL (since otherwise your query could be impacted by entities from other repositories).
+
+String-based queries support parametrized queries.
+You can either use positional placeholders like "`$1`", in which case each of the method parameters will map, in order, to `$1`, `$2`, `$3`... Alternatively, you can use named placeholders using the "`$someString`" syntax.
+Method parameters will be matched with their corresponding placeholder using the parameter's name, which can be overridden by annotating each parameter (except a `Pageable` or `Sort`) with `@Param` (eg. `@Param("someString")`).
+You cannot mix the two approaches in your query and will get an `IllegalArgumentException` if you do.
+
+Note that you can mix N1QL placeholders and SpEL. N1QL placeholders will still consider all method parameters, so be sure to use the correct index like in the example below:
+
+.An inline query that mixes SpEL and N1QL placeholders
+====
+[source,java]
+----
+@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND #{[0]} = $2")
+public List<User> findUsersByDynamicCriteria(String criteriaField, Object criteriaValue)
+----
+====
+
+This allows you to generate queries that would work similarly to eg. `AND name = "someName"` or `AND age = 3`, with a single method declaration.
+
+You can also do single projections in your N1QL queries (provided it selects only one field and returns only one result, usually an aggregation like `COUNT`, `AVG`, `MAX`...).
+Such projection would have a simple return type like `long`, `boolean` or `String`.
+This is *NOT* intended for projections to DTOs.
+
+Another example: +
+`#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND test = $1` +
+is equivalent to +
+`SELECT #{#n1ql.fields} FROM #{#n1ql.collection} WHERE #{#n1ql.filter} AND test = $1`
+
+.A practical application of SpEL with Spring Security
+****
+SpEL can be useful when you want to do a query depending on data injected by other Spring components, like Spring Security.
+Here is what you need to do to extend the SpEL context to get access to such external data.
+
+First, you need to implement an `EvaluationContextExtension` (use the support class as below):
+
+[source,java]
+----
+class SecurityEvaluationContextExtension extends EvaluationContextExtensionSupport {
+
+  @Override
+  public String getExtensionId() {
+    return "security";
+  }
+
+  @Override
+  public SecurityExpressionRoot getRootObject() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return new SecurityExpressionRoot(authentication) {};
+  }
+}
+----
+
+Then all you need to do for Spring Data Couchbase to be able to access associated SpEL values is to declare a corresponding bean in your configuration:
+
+[source,java]
+----
+@Bean
+EvaluationContextExtension securityExtension() {
+    return new SecurityEvaluationContextExtension();
+}
+----
+
+This could be useful to craft a query according to the role of the connected user for instance:
+
+[source,java]
+----
+@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND " +
+"role = '?#{hasRole('ROLE_ADMIN') ? 'public_admin' : 'admin'}'")
+List<UserInfo> findAllAdmins(); //only ROLE_ADMIN users will see hidden admins
+----
+
+Delete query example:
+
+[source,java]
+----
+@Query("#{#n1ql.delete} WHERE #{#n1ql.filter} AND " +
+"username = $1 #{#n1ql.returning}")
+UserInfo removeUser(String username);
+----
+
+****
+
+The second method uses Spring-Data's query derivation mechanism to build a N1QL query from the method name and parameters.
+This will produce a query looking like this: `SELECT ... FROM ... WHERE firstName = "valueOfFnameAtRuntime"`.
+You can combine these criteria, even do a count with a name like `countByFirstname` or a limit with a name like `findFirst3ByLastname`...
+
+NOTE: Actually the generated N1QL query will also contain an additional N1QL criteria in order to only select documents that match the repository's entity class.
+
+Most Spring-Data keywords are supported:
+.Supported keywords inside @Query (N1QL) method names
+
+[options = "header,autowidth"]
+|===============
+|Keyword|Sample|N1QL WHERE clause snippet
+|`And`|`findByLastnameAndFirstname`|`lastName = a AND firstName = b`
+|`Or`|`findByLastnameOrFirstname`|`lastName = a OR firstName = b`
+|`Is,Equals`|`findByField`,`findByFieldEquals`|`field = a`
+|`IsNot,Not`|`findByFieldIsNot`|`field != a`
+|`Between`|`findByFieldBetween`|`field BETWEEN a AND b`
+|`IsLessThan,LessThan,IsBefore,Before`|`findByFieldIsLessThan`,`findByFieldBefore`|`field < a`
+|`IsLessThanEqual,LessThanEqual`|`findByFieldIsLessThanEqual`|`field <= a`
+|`IsGreaterThan,GreaterThan,IsAfter,After`|`findByFieldIsGreaterThan`,`findByFieldAfter`|`field > a`
+|`IsGreaterThanEqual,GreaterThanEqual`|`findByFieldGreaterThanEqual`|`field >= a`
+|`IsNull`|`findByFieldIsNull`|`field IS NULL`
+|`IsNotNull,NotNull`|`findByFieldIsNotNull`|`field IS NOT NULL`
+|`IsLike,Like`|`findByFieldLike`|`field LIKE "a"` - a should be a String containing % and _ (matching n and 1 characters)
+|`IsNotLike,NotLike`|`findByFieldNotLike`|`field NOT LIKE "a"` - a should be a String containing % and _ (matching n and 1 characters)
+|`IsStartingWith,StartingWith,StartsWith`|`findByFieldStartingWith`|`field LIKE "a%"` - a should be a String prefix
+|`IsEndingWith,EndingWith,EndsWith`|`findByFieldEndingWith`|`field LIKE "%a"` - a should be a String suffix
+|`IsContaining,Containing,Contains`|`findByFieldContains`|`field LIKE "%a%"` - a should be a String
+|`IsNotContaining,NotContaining,NotContains`|`findByFieldNotContaining`|`field NOT LIKE "%a%"` - a should be a String
+|`IsIn,In`|`findByFieldIn`|`field IN array` - note that the next parameter value (or its children if a collection/array) should be compatible for storage in a `JsonArray`)
+|`IsNotIn,NotIn`|`findByFieldNotIn`|`field NOT IN array` - note that the next parameter value (or its children if a collection/array) should be compatible for storage in a `JsonArray`)
+|`IsTrue,True`|`findByFieldIsTrue`|`field = TRUE`
+|`IsFalse,False`|`findByFieldFalse`|`field = FALSE`
+|`MatchesRegex,Matches,Regex`|`findByFieldMatches`|`REGEXP_LIKE(field, "a")` - note that the ignoreCase is ignored here, a is a regular expression in String form
+|`Exists`|`findByFieldExists`|`field IS NOT MISSING` - used to verify that the JSON contains this attribute
+|`OrderBy`|`findByFieldOrderByLastnameDesc`|`field = a ORDER BY lastname DESC`
+|`IgnoreCase`|`findByFieldIgnoreCase`|`LOWER(field) = LOWER("a")` - a must be a String
+|===============
+
+You can use both counting queries and <<repositories.limit-query-result>> features with this approach.
+
+With N1QL, another possible interface for the repository is the `PagingAndSortingRepository` one (which extends `CrudRepository`).
+It adds two methods:
+
+[cols="2",options="header"]
+.Exposed methods on the PagingAndSortingRepository
+|===
+| Method
+| Description
+
+| Iterable<T> findAll(Sort sort);
+| Allows to retrieve all relevant entities while sorting on one of their attributes.
+
+| Page<T> findAll(Pageable pageable);
+| Allows to retrieve your entities in pages. The returned `Page` allows to easily get the next page's `Pageable` as well as the list of items. For the first call, use `new PageRequest(0, pageSize)` as Pageable.
+|===
+
+TIP: You can also use `Page` and `Slice` as method return types as well with a N1QL backed repository.
+
+NOTE: If pageable and sort parameters are used with inline queries, there should not be any order by, limit or offset clause in the inline query itself otherwise the server would reject the query as malformed.
+
+
+[[couchbase.repository.indexing]]
+=== Automatic Index Management
+
+By default, it is expected that the user creates and manages optimal indexes for their queries. Especially in the early stages of development, it can come in handy to automatically create indexes to get going quickly.
+
+For N1QL, the following annotations are provided which need to be attached to the entity (either on the class or the field):
+
+ - `@QueryIndexed`: Placed on a field to signal that this field should be part of the index
+ - `@CompositeQueryIndex`: Placed on the class to signal that an index on more than one field (composite) should be created.
+ - `@CompositeQueryIndexes`: If more than one `CompositeQueryIndex` should be created, this annotation will take a list of them.
+
+For example, this is how you define a composite index on an entity:
+
+.Composite index on two fields with ordering
+====
+[source,java]
+----
+@Document
+@CompositeQueryIndex(fields = {"id", "name desc"})
+public class Airline {
+   @Id
+   String id;
+
+	@QueryIndexed
+	String name;
+
+	@PersistenceConstructor
+	public Airline(String id, String name) {
+		this.id = id;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+}
+----
+====
+
+By default, index creation is disabled. If you want to enable it you need to override it on the configuration:
+
+.Enable auto index creation
+====
+[source,java]
+----
+@Override
+protected boolean autoIndexCreation() {
+ return true;
+}
+----
+====
+
+[[couchbase.repository.consistency]]
+=== Querying with consistency
+
+By default repository queries that use N1QL use the `NOT_BOUNDED` scan consistency. This means that results return quickly, but the data from the index may not yet contain data from previously written operations (called eventual consistency). If you need "ready your own write" semantics for a query, you need to use the `@ScanConsistency` annotation. Here is an example:
+
+.Using a different scan consistency
+====
+[source,java]
+----
+@Repository
+public interface AirportRepository extends PagingAndSortingRepository<Airport, String> {
+
+	@Override
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Iterable<Airport> findAll();
+
+}
+----
+====
+
+[[couchbase.repository.dto-projections]]
+=== DTO Projections
+
+Spring Data Repositories usually return the domain model when using query methods.
+However, sometimes, you may need to alter the view of that model for various reasons.
+In this section, you will learn how to define projections to serve up simplified and reduced views of resources.
+
+Look at the following domain model:
+
+[source,java]
+----
+@Entity
+public class Person {
+
+  @Id @GeneratedValue
+  private Long id;
+  private String firstName, lastName;
+
+  @OneToOne
+  private Address address;
+  …
+}
+
+@Entity
+public class Address {
+
+  @Id @GeneratedValue
+  private Long id;
+  private String street, state, country;
+
+  …
+}
+----
+
+This `Person` has several attributes:
+
+* `id` is the primary key
+* `firstName` and `lastName` are data attributes
+* `address` is a link to another domain object
+
+Now assume we create a corresponding repository as follows:
+
+[source,java]
+----
+interface PersonRepository extends CrudRepository<Person, Long> {
+
+  Person findPersonByFirstName(String firstName);
+}
+----
+
+Spring Data will return the domain object including all of its attributes.
+There are two options just to retrieve the `address` attribute.
+One option is to define a repository for `Address` objects like this:
+
+[source,java]
+----
+interface AddressRepository extends CrudRepository<Address, Long> {}
+----
+
+In this situation, using `PersonRepository` will still return the whole `Person` object.
+Using `AddressRepository` will return just the `Address`.
+
+However, what if you do not want to expose `address` details at all?
+You can offer the consumer of your repository service an alternative by defining one or more projections.
+
+.Simple Projection
+====
+[source,java]
+----
+interface NoAddresses {  <1>
+
+  String getFirstName(); <2>
+
+  String getLastName();  <3>
+}
+----
+
+This projection has the following details:
+
+<1> A plain Java interface making it declarative.
+<2> Export the `firstName`.
+<3> Export the `lastName`.
+====
+
+The `NoAddresses` projection only has getters for `firstName` and `lastName` meaning that it will not serve up any address information.
+The query method definition returns in this case `NoAdresses` instead of `Person`.
+
+[source,java]
+----
+interface PersonRepository extends CrudRepository<Person, Long> {
+
+  NoAddresses findByFirstName(String firstName);
+}
+----
+
+Projections declare a contract between the underlying type and the method signatures related to the exposed properties.
+Hence it is required to name getter methods according to the property name of the underlying type.
+If the underlying property is named `firstName`, then the getter method must be named `getFirstName` otherwise Spring Data is not able to look up the source property.

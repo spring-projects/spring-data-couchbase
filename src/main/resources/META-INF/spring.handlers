@@ -1,0 +1,1 @@
+http\://www.springframework.org/schema/data/couchbase=org.springframework.data.couchbase.config.CouchbaseNamespaceHandler

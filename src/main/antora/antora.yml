@@ -1,0 +1,13 @@
+name: data-couchbase
+version: true
+title: Spring Data Couchbase
+nav:
+  - modules/ROOT/nav.adoc
+ext:
+  collector:
+    - run:
+        command: ./mvnw -B validate process-resources dependency:unpack -am -Pantora-process-resources
+        local: true
+      scan:
+        - dir: target/classes/
+        - dir: target/antora/
