@@ -22,12 +22,13 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.encryption.CryptoManager;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Reading Converter factory for Enums. This differs from the one provided in org.springframework.core.convert.support
  * by getting the result from the jackson objectmapper (which will process @JsonValue annotations) This is registered in
- * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager, ObjectMapper)}.
+ * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager, tools.jackson.databind.json.JsonMapper)}.
  * This will take precedence over {@link org.springframework.core.convert.support.StringToEnumConverterFactory}
  * 
  * @author Michael Reiche

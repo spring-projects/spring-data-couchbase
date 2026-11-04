@@ -15,8 +15,6 @@ package org.springframework.data.couchbase.core.convert;
  * limitations under the License.
  */
 
-import java.io.IOException;
-
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 import org.springframework.data.convert.ReadingConverter;
@@ -24,12 +22,13 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.encryption.CryptoManager;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Reading Converter factory for Enums. This differs from the one provided in org.springframework.core.convert.support
  * by getting the result from the jackson objectmapper (which will process @JsonValue annotations) This is registered in
- * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager, ObjectMapper)}.
+ * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager, tools.jackson.databind.json.JsonMapper)}.
  *
  * @author Michael Reiche
  */
@@ -72,12 +71,7 @@ public class BooleanToEnumConverterFactory implements ConverterFactory<Boolean, 
       if (source == null) {
         return null;
       }
-      try {
-        return objectMapper.readValue("\"" + source + "\"", enumType);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-
+      return objectMapper.readValue("\"" + source + "\"", enumType);
     }
   }
 }

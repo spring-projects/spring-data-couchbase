@@ -56,8 +56,9 @@ import com.couchbase.client.encryption.DefaultCryptoManager;
 import com.couchbase.client.encryption.Keyring;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonObject;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
+
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.datatype.joda.JodaModule;
 
 /**
  * Repository KV tests
@@ -337,10 +338,9 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 	static class Config extends org.springframework.data.couchbase.domain.Config {
 
 		@Override
-		public ObjectMapper couchbaseObjectMapper() {
-			ObjectMapper om = super.couchbaseObjectMapper();
-			om.registerModule(new JodaModule()); // to test joda mapping
-			return om;
+		public JsonMapper couchbaseObjectMapper() {
+			return super.couchbaseObjectMapper().rebuild().addModule(new JodaModule()) // to test joda mapping
+					.build();
 		}
 
 		@Override
