@@ -196,7 +196,7 @@ public class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProce
 		/**
 		 * Creates a new {@link DefaultCrudMethodMetadata} for the given {@link Method}. This collects data from implemented
 		 * methods (save(), findById() etc) that would be collected in query.setMeta() for unimplemented methods. There may
-		 * be annotations if the methods were overriden in the repository.
+		 * be annotations if the methods were overridden in the repository.
 		 * 
 		 * @param method must not be {@literal null}.
 		 */
