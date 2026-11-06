@@ -79,7 +79,7 @@ public abstract class CouchbaseRepositoryBase<T, ID> {
 	 * 1. The repository<br>
 	 * 2. The entity<br>
 	 * 3. otherwise null<br>
-	 * This can be overriden in the operation method by<br>
+	 * This can be overridden in the operation method by<br>
 	 * 1. repository.withCollection() 2. Annotation on the method
 	 */
 
