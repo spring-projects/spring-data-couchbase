@@ -38,12 +38,12 @@ import com.couchbase.client.java.encryption.annotation.Encrypted;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Encrypt/Decrypted properties annotated. This is registered in
- * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager, ObjectMapper)}.
+ * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager, tools.jackson.databind.json.JsonMapper)}.
  * 
  * @author Michael Reiche
  */
@@ -128,11 +128,7 @@ public class CryptoConverter implements
 			String plainString = value != null ? value.toString() : null;
 			if ((sourceType == String.class || targetType == String.class) || sourceType == Character.class
 					|| sourceType == char.class || sourceType.isEnum() || Locale.class.isAssignableFrom(sourceType)) {
-				try {
-					plainString = objectMapper.writeValueAsString(plainString);// put quotes around strings
-				} catch (JsonProcessingException e) {
-					throw new RuntimeException(e);
-				}
+				plainString = objectMapper.writeValueAsString(plainString);// put quotes around strings
 			}
 			plainText = ByteUtils.getBytes(plainString);
 		} else { // an entity

@@ -75,18 +75,16 @@ import org.springframework.util.StringUtils;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
-import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.codec.JacksonJsonSerializer;
+import com.couchbase.client.java.codec.Jackson3JsonSerializer;
 import com.couchbase.client.java.encryption.annotation.Encrypted;
-import com.couchbase.client.java.encryption.databind.jackson.EncryptionModule;
+import com.couchbase.client.java.encryption.databind.jackson3.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
-import com.couchbase.client.java.json.JsonValueModule;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -102,7 +100,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
 
-	volatile ObjectMapper objectMapper;
+	volatile JsonMapper objectMapper;
 	volatile CryptoManager cryptoManager = null;
 
 	/**
@@ -169,10 +167,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean(destroyMethod = "shutdown")
 	public ClusterEnvironment couchbaseClusterEnvironment() {
 		ClusterEnvironment.Builder builder = ClusterEnvironment.builder();
-		if (!nonShadowedJacksonPresent()) {
-			throw new CouchbaseException("non-shadowed Jackson not present");
-		}
-		builder.jsonSerializer(JacksonJsonSerializer.create(getObjectMapper()));
+		builder.jsonSerializer(Jackson3JsonSerializer.create(getObjectMapper()));
 		builder.cryptoManager(getCryptoManager());
 		configureEnvironment(builder);
 		return builder.build();
@@ -314,7 +309,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mappingContext;
 	}
 
-	final public ObjectMapper getObjectMapper() {
+	final public JsonMapper getObjectMapper() {
 		if (objectMapper == null) {
 			synchronized (this) {
 				if (objectMapper == null) {
@@ -326,19 +321,20 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	/**
-	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment and spring-data-couchbase
-	 * jacksonTranslationService and also some converters (EnumToObject, StringToEnum, IntegerToEnum)
+	 * Creates a {@link JsonMapper} for the jsonSerializer of the ClusterEnvironment and spring-data-couchbase
+	 * jacksonTranslationService and also some converters (EnumToObject, StringToEnum, IntegerToEnum).
+	 * <p>
+	 * The mapper starts from {@link JacksonTranslationService#defaultJsonMapperBuilder()}, so documents keep the Jackson 2
+	 * JSON format. Override this method to use other settings, for example plain Jackson 3 defaults.
 	 *
-	 * @return ObjectMapper
+	 * @return JsonMapper
 	 */
-	protected ObjectMapper couchbaseObjectMapper() {
-		ObjectMapper om = new ObjectMapper();
-		om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		om.registerModule(new JsonValueModule());
+	protected JsonMapper couchbaseObjectMapper() {
+		JsonMapper.Builder builder = JacksonTranslationService.defaultJsonMapperBuilder();
 		if (getCryptoManager() != null) {
-			om.registerModule(new EncryptionModule(getCryptoManager()));
+			builder.addModule(new EncryptionModule(getCryptoManager()));
 		}
-		return om;
+		return builder.build();
 	}
 
 	/**
@@ -431,7 +427,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param objectMapper
 	 * @return must not be {@literal null}.
 	 */
-	public CustomConversions customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper) {
+	public CustomConversions customConversions(CryptoManager cryptoManager, JsonMapper objectMapper) {
 		List<Object> newConverters = new ArrayList();
 		// The following
 		newConverters.add(new OtherConverters.EnumToObject(getObjectMapper()));
@@ -452,7 +448,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	/**
-	 * This should be overridden in order to update the {@link #customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper)} List
+	 * This should be overridden in order to update the {@link #customConversions(CryptoManager cryptoManager, JsonMapper objectMapper)} List
 	 */
 	protected void additionalConverters(List<Object> converters) {
 		// NO_OP
@@ -514,15 +510,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	protected FieldNamingStrategy fieldNamingStrategy() {
 		return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy()
 				: PropertyNameFieldNamingStrategy.INSTANCE;
-	}
-
-	private boolean nonShadowedJacksonPresent() {
-		try {
-			JacksonJsonSerializer.preflightCheck();
-			return true;
-		} catch (Throwable t) {
-			return false;
-		}
 	}
 
 	public QueryScanConsistency getDefaultConsistency() {
