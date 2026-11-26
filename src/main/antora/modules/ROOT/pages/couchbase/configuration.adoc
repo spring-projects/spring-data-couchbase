@@ -190,6 +190,54 @@ If you start your application, you should see Couchbase INFO level logging in th
 Couchbase Java SDK is connecting to the database.If any errors are reported, make sure that the given credentials
 and host information are correct.
 
+[[configuration-jackson3]]
+=== Using Jackson 3
+
+Spring Data Couchbase uses Jackson 2 by default.
+Jackson 3 support is optional.
+To use it, add `tools.jackson.core:jackson-databind` to your dependencies.
+Jackson 2 must stay on the class path in this version.
+
+The `TranslationService` reads documents.
+The SDK JSON serializer writes documents and also handles direct SDK calls.
+
+With `AbstractCouchbaseConfiguration`, override `couchbaseTranslationService()` to return a `Jackson3TranslationService`.
+To use Jackson 3 in the SDK JSON serializer too, override `configureEnvironment(builder)` and set `Jackson3JsonSerializer.create(jsonMapper)`.
+
+With Spring Boot, declare a `TranslationService` bean that is a `Jackson3TranslationService`.
+For the SDK JSON serializer, declare a `ClusterEnvironmentBuilderCustomizer` bean that sets the same serializer.
+
+Build the mapper from `Jackson3TranslationService.defaultJsonMapperBuilder()`.
+This mapper writes and reads the same JSON as the Jackson 2 default, so stored documents keep their format.
+You can add your own modules to this builder.
+If the application calls the SDK directly with `@Encrypted` classes, add the SDK Jackson 3 `EncryptionModule`, built with your `CryptoManager`, to the builder.
+Any module that you register in `couchbaseObjectMapper()` also needs its Jackson 3 version in this builder.
+Entity properties of type Jackson 3 `JsonNode` work when Jackson 3 is on the class path.
+
+.Using Jackson 3
+====
+[source,java]
+----
+@Configuration
+public class Config extends AbstractCouchbaseConfiguration {
+
+    private final JsonMapper jsonMapper = Jackson3TranslationService.defaultJsonMapperBuilder().build();
+
+    @Override
+    public TranslationService couchbaseTranslationService() {
+        return new Jackson3TranslationService(jsonMapper);
+    }
+
+    @Override
+    protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+        builder.jsonSerializer(Jackson3JsonSerializer.create(jsonMapper));
+    }
+
+    // connection string, credentials and bucket name as above
+}
+----
+====
+
 
 [[configuring-multiple-buckets]]
 == Configuring Multiple Buckets

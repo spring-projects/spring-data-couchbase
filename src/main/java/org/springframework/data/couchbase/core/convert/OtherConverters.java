@@ -36,6 +36,7 @@ import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
+import org.springframework.util.ClassUtils;
 
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.java.json.JsonArray;
@@ -51,8 +52,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Out of the box conversions for Other types.
  *
  * @author Michael Reiche
+ * @author Emilien Bevierre
  */
 public final class OtherConverters {
+
+	private static final boolean JACKSON_3_PRESENT = ClassUtils.isPresent("tools.jackson.databind.JsonNode",
+			OtherConverters.class.getClassLoader());
 
 	private OtherConverters() {
 	}
@@ -83,6 +88,9 @@ public final class OtherConverters {
 		converters.add(CouchbaseListToJsonArray.INSTANCE);
 		converters.add(YearMonthToStringConverter.INSTANCE);
 		converters.add(StringToYearMonthConverter.INSTANCE);
+		if (JACKSON_3_PRESENT) {
+			converters.addAll(Jackson3JsonNodeConverters.getConvertersToRegister());
+		}
 		// EnumToObject, IntegerToEnumConverterFactory and StringToEnumConverterFactory
 		// are
 		// registered in
