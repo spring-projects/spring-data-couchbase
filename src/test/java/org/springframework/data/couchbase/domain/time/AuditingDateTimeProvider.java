@@ -21,6 +21,9 @@ import java.util.Optional;
 
 import org.springframework.data.auditing.DateTimeProvider;
 
+/**
+ * @author Artur Kalimullin
+ */
 public class AuditingDateTimeProvider implements DateTimeProvider {
 
 	private DateTimeService dateTimeService = new FixedDateTimeService();
@@ -28,6 +31,10 @@ public class AuditingDateTimeProvider implements DateTimeProvider {
 	public AuditingDateTimeProvider() {}
 
 	public AuditingDateTimeProvider(DateTimeService dateTimeService) {
+		this.dateTimeService = dateTimeService;
+	}
+
+	public void setDateTimeService(DateTimeService dateTimeService) {
 		this.dateTimeService = dateTimeService;
 	}
 

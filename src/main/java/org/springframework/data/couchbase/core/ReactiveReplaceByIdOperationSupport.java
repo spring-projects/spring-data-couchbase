@@ -49,6 +49,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * @author Michael Reiche
  * @author Tigran Babloyan
  * @author Emilien Bevierre
+ * @author Artur Kalimullin
  */
 public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdOperation {
 
@@ -110,7 +111,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 									return collection.reactive()
 											.replace(converted.getId().toString(), converted.export(),
 													buildReplaceOptions(pArgs.getOptions(), object, converted))
-											.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null,
+											.flatMap(result -> support.applyResult(converted, result.cas(), null,
 													null));
 								} else {
 									rejectInvalidTransactionalOptions();
@@ -137,7 +138,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 										return ctx.replace(getResult, template.getCouchbaseClientFactory().getCluster().environment()
 												.transcoder().encode(converted.export()).encoded(), new SpanWrapper(span));
 									}).flatMap(
-											result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null));
+											result -> support.<T>applyResult(converted, result.cas(), null, null));
 								}
 							})).onErrorMap(throwable -> {
 								if (throwable instanceof RuntimeException) {

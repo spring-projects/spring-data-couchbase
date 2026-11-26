@@ -41,6 +41,7 @@ import org.springframework.util.Assert;
  * @author Carlos Espinaco
  * @author Michael Reiche
  * @author Emilien Bevierre
+ * @author Artur Kalimullin
  * @since 4.2
  */
 class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
@@ -61,6 +62,7 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 				.flatMap(entity -> maybeCallBeforeConvert(entity, "")).map(maybeNewEntity -> {
 					final CouchbaseDocument converted = new CouchbaseDocument();
 					converter.write(maybeNewEntity, converted);
+					converted.setEntityToWrite(maybeNewEntity);
 					return converted;
 				}).flatMap(converted -> maybeCallAfterConvert(entityToEncode, converted, "").thenReturn(converted))
 				.doOnNext(converted -> maybeEmitEvent(new BeforeSaveEvent<>(entityToEncode, converted)));
@@ -88,9 +90,9 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 	}
 
 	@Override
-	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-			Object txResultHolder, CouchbaseResourceHolder holder) {
-		return Mono.fromSupplier(() -> applyResultBase(entity, converted, id, cas, txResultHolder, holder));
+	public <T> Mono<T> applyResult(CouchbaseDocument converted, Long cas, Object txResultHolder,
+			CouchbaseResourceHolder holder) {
+		return Mono.fromSupplier(() -> this.applyResultBase(converted, cas, txResultHolder, holder));
 	}
 
 	@Override
